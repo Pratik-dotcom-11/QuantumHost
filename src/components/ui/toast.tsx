@@ -1,0 +1,100 @@
+"use client";
+
+import React, { createContext, useCallback, useContext, useState } from "react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
+
+type ToastVariant = "success" | "error" | "info";
+
+interface ToastItem {
+  id: string;
+  title: string;
+  description?: string;
+  variant: ToastVariant;
+}
+
+interface ToastContextValue {
+  toast: (opts: { title: string; description?: string; variant?: ToastVariant }) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<ToastItem[]>([]);
+
+  const dismiss = useCallback((id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const toast = useCallback(
+    ({
+      title,
+      description,
+      variant = "info",
+    }: {
+      title: string;
+      description?: string;
+      variant?: ToastVariant;
+    }) => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      setItems((prev) => [...prev.slice(-3), { id, title, description, variant }]);
+      setTimeout(() => {
+        dismiss(id);
+      }, 4500);
+    },
+    [dismiss]
+  );
+
+  return (
+    <ToastContext.Provider value={{ toast }}>
+      {children}
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2.5 px-4 sm:px-0"
+      >
+        {items.map((item) => (
+          <div
+            key={item.id}
+            role="status"
+            className={`pointer-events-auto flex items-start gap-3 rounded-xl border bg-white p-3.5 shadow-xl shadow-slate-900/10 transition-all ${
+              item.variant === "success"
+                ? "border-emerald-200 text-[#0b0f19]"
+                : item.variant === "error"
+                ? "border-rose-200 text-[#0b0f19]"
+                : "border-blue-200 text-[#0b0f19]"
+            }`}
+          >
+            {item.variant === "success" ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            ) : item.variant === "error" ? (
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+            ) : (
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#1d5bff]" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold">{item.title}</p>
+              {item.description ? (
+                <p className="mt-0.5 text-xs text-[#525b6c]">{item.description}</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => dismiss(item.id)}
+              className="rounded p-0.5 text-slate-400 hover:text-[#0b0f19] cursor-pointer"
+              aria-label="Dismiss notification"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) {
+    throw new Error("useToast must be used inside ToastProvider");
+  }
+  return ctx;
+}

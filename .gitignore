@@ -1,0 +1,23 @@
+# Dependencies & Build
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+
+# Environment files
+.env
+.env*.local
+
+# Local object storage & worker scratch
+.quantumhost-storage/
+.qh-builds/
+
+# Logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+next-env.d.ts
+*.tsbuildinfo

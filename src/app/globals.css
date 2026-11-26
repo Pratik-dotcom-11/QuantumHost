@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: "Plus Jakarta Sans Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Minimal Architectural Color Palette */
+  --color-background: #f9fafb;
+  --color-foreground: #0a0e17;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0e17;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0e17;
+  --color-primary: #1d5bff;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f4f9;
+  --color-secondary-foreground: #0a0e17;
+  --color-muted: #f3f5f8;
+  --color-muted-foreground: #556070;
+  --color-accent: #eef3ff;
+  --color-accent-foreground: #1d5bff;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e8ef;
+  --color-input: #d5dbe6;
+  --color-ring: #1d5bff;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.font-mono,
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.qh-light-grid {
+  background-image:
+    linear-gradient(to right, rgba(10, 14, 23, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10, 14, 23, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.qh-dark-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.qh-sky-band {
+  background: linear-gradient(180deg, #f9fafb 0%, #ebf2fc 32%, #edf4fd 72%, #f9fafb 100%);
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f5f8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cfd6e3;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
