@@ -75,6 +75,31 @@ kbd {
   );
 }
 
+@keyframes qh-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-qh-marquee {
+  display: flex;
+  width: max-content;
+  animation: qh-marquee 34s linear infinite;
+}
+
+.group:hover .animate-qh-marquee {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-qh-marquee {
+    animation: none;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
