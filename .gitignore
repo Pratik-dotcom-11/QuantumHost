@@ -21,3 +21,6 @@ npm-debug.log*
 Thumbs.db
 next-env.d.ts
 *.tsbuildinfo
+
+# Vercel local CLI state & pulled env
+.vercel
