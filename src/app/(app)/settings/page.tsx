@@ -38,7 +38,9 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#0b0f19]">Account Settings</h1>
+        <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
+          Account Settings
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your profile, GitHub source integrations, and provider-independent AI credentials.
         </p>

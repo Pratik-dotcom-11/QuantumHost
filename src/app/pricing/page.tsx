@@ -67,16 +67,16 @@ export default async function PricingPage() {
   const { user } = await getAuthenticatedUser();
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] text-[#0b0f19]">
+    <div className="min-h-screen bg-[#0b0907] text-[#f7f3ec]">
       <PublicHeader isAuthenticated={Boolean(user)} />
 
-      <main className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+      <main className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-2xl text-center">
           <Badge>Transparent Infrastructure Pricing</Badge>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#0b0f19] sm:text-5xl">
+          <h1 className="font-display mt-5 text-4xl font-medium tracking-[-0.025em] text-[#f7f3ec] sm:text-5xl">
             Predictable scaling from side project to production
           </h1>
-          <p className="mt-4 text-sm text-[#525b6c] sm:text-base">
+          <p className="mt-4 text-sm text-[#9a9084] sm:text-base">
             Built on zero-egress artifact storage and isolated build queues with clear free-tier
             boundaries.
           </p>
@@ -88,47 +88,33 @@ export default async function PricingPage() {
               key={tier.name}
               className={`flex flex-col justify-between ${
                 tier.highlighted
-                  ? "border-[#1d5bff] bg-[#060911] text-white shadow-2xl shadow-slate-900/20"
-                  : "border-slate-200 bg-white"
+                  ? "border-[#d49b4b]/60 bg-[#18130d] shadow-[0_18px_60px_rgba(244,186,74,0.08)]"
+                  : "border-[#26201a] bg-[#14110e]"
               }`}
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className={`text-lg ${tier.highlighted ? "text-white" : ""}`}>
-                    {tier.name}
-                  </CardTitle>
+                  <CardTitle className="text-lg text-[#f7f3ec]">{tier.name}</CardTitle>
                   <Badge variant={tier.highlighted ? "default" : "secondary"}>{tier.badge}</Badge>
                 </div>
                 <div className="mt-4 flex items-baseline gap-1.5">
-                  <span
-                    className={`text-4xl font-bold ${
-                      tier.highlighted ? "text-white" : "text-[#0b0f19]"
-                    }`}
-                  >
+                  <span className="font-display text-4xl font-semibold text-[#f7f3ec]">
                     {tier.price}
                   </span>
-                  <span
-                    className={`text-xs ${tier.highlighted ? "text-slate-400" : "text-[#525b6c]"}`}
-                  >
-                    {tier.cadence}
-                  </span>
+                  <span className="text-xs text-[#9a9084]">{tier.cadence}</span>
                 </div>
-                <CardDescription className={`pt-2 ${tier.highlighted ? "text-slate-300" : ""}`}>
+                <CardDescription className="pt-2 text-[#9a9084]">
                   {tier.description}
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="flex flex-1 flex-col justify-between space-y-6">
-                <ul
-                  className={`space-y-2.5 text-sm ${
-                    tier.highlighted ? "text-slate-200" : "text-[#525b6c]"
-                  }`}
-                >
+                <ul className="space-y-2.5 text-sm text-[#d7cfc3]">
                   {tier.features.map((feat) => (
                     <li key={feat} className="flex items-start gap-2.5">
                       <Check
                         className={`mt-0.5 h-4 w-4 shrink-0 ${
-                          tier.highlighted ? "text-[#60a5fa]" : "text-[#1d5bff]"
+                          tier.highlighted ? "text-[#f4ba4a]" : "text-[#c4923e]"
                         }`}
                       />
                       <span className="text-xs leading-relaxed">{feat}</span>
@@ -138,7 +124,7 @@ export default async function PricingPage() {
 
                 <Button
                   asChild
-                  variant={tier.highlighted ? "default" : "dark"}
+                  variant={tier.highlighted ? "default" : "outline"}
                   className="w-full"
                 >
                   <Link href={user ? "/dashboard" : tier.href}>

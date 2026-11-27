@@ -2,10 +2,10 @@ import Link from "next/link";
 import { ArrowUpRight, Boxes, GitBranch, Plus, Settings2 } from "lucide-react";
 import { requirePageUser } from "@/lib/auth";
 import { formatRelativeTime } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +24,10 @@ export default async function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
+            Projects
+          </h1>
+          <p className="mt-1 text-sm text-[#9a9084]">
             Repositories configured for isolated builds and global artifact serving.
           </p>
         </div>
@@ -56,11 +58,11 @@ export default async function ProjectsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <CardTitle className="truncate text-base">
-                      <Link href={`/projects/${project.id}`} className="hover:text-[#1d5bff]">
+                      <Link href={`/projects/${project.id}`} className="hover:text-[#f4ba4a]">
                         {project.name}
                       </Link>
                     </CardTitle>
-                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                    <p className="mt-1 truncate font-mono text-xs text-[#9a9084]">
                       /sites/{project.slug}
                     </p>
                   </div>
@@ -68,14 +70,14 @@ export default async function ProjectsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-lg border border-border bg-[#f8f9fb] p-3 text-xs">
-                  <div className="flex items-center gap-1.5 font-mono text-[#525b6c]">
-                    <GitBranch className="h-3.5 w-3.5 text-[#1d5bff]" />
+                <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3 text-xs">
+                  <div className="flex items-center gap-1.5 font-mono text-[#d7cfc3]">
+                    <GitBranch className="h-3.5 w-3.5 text-[#f4ba4a]" />
                     <span className="truncate">
                       {project.repo_full_name || "No repository linked"}
                     </span>
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#9a9084]">
                     <span>Branch: {project.default_branch}</span>
                     <span>Updated {formatRelativeTime(project.updated_at)}</span>
                   </div>

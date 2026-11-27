@@ -72,19 +72,19 @@ export default async function DocsPage() {
   const { user } = await getAuthenticatedUser();
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] text-[#0b0f19]">
+    <div className="min-h-screen bg-[#0b0907] text-[#f7f3ec]">
       <PublicHeader isAuthenticated={Boolean(user)} />
 
-      <main className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <main className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="max-w-3xl">
           <Badge>
             <BookOpen className="h-3.5 w-3.5" />
             QuantumHost Documentation
           </Badge>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#0b0f19]">
+          <h1 className="font-display mt-5 text-4xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
             Developer &amp; Infrastructure Reference
           </h1>
-          <p className="mt-3 text-sm text-[#525b6c] sm:text-base">
+          <p className="mt-3 text-sm text-[#9a9084] sm:text-base">
             Explore the technical specifications, API contracts, security boundaries, and deployment
             workflows powering QuantumHost.
           </p>
@@ -96,65 +96,68 @@ export default async function DocsPage() {
             return (
               <Card key={doc.id} id={doc.id}>
                 <CardHeader>
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0b0f19] text-white">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[#d49b4b]/30 bg-[#2a1d0e]/70 text-[#f4ba4a]">
                     <Icon className="h-5 w-5" />
                   </div>
                   <CardTitle>{doc.title}</CardTitle>
-                  <CardDescription className="font-mono text-[11px] text-[#1d5bff]">
+                  <CardDescription className="font-mono text-[11px] text-[#f4ba4a]">
                     {doc.file}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs leading-relaxed text-[#525b6c]">{doc.summary}</p>
+                  <p className="text-xs leading-relaxed text-[#9a9084]">{doc.summary}</p>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        <div className="mt-12 rounded-3xl bg-[#060911] p-8 text-white shadow-xl">
-          <div className="flex items-center gap-2 text-base font-semibold">
-            <Globe className="h-5 w-5 text-[#60a5fa]" />
-            Quickstart: Deploy Your First Project
-          </div>
-          <p className="mt-1 text-xs text-slate-300">
-            Follow these steps to configure credentials and launch your first isolated build.
-          </p>
-          <ol className="mt-5 list-decimal space-y-2 pl-5 text-xs leading-relaxed text-slate-200 sm:text-sm">
-            <li>
-              Create a QuantumHost account via{" "}
-              <Link href="/register" className="text-[#60a5fa] hover:underline">
-                /register
-              </Link>{" "}
-              or sign in with GitHub.
-            </li>
-            <li>
-              Connect a GitHub account in{" "}
-              <Link href="/settings" className="text-[#60a5fa] hover:underline">
-                Account Settings
-              </Link>{" "}
-              using OAuth or a fine-grained Personal Access Token.
-            </li>
-            <li>
-              Import a repository in{" "}
-              <Link href="/projects/new" className="text-[#60a5fa] hover:underline">
-                New Project
-              </Link>
-              , inspect its detected framework preset, and add encrypted environment variables.
-            </li>
-            <li>
-              Start Redis and the isolated build worker (`npm run worker:dev`) and click{" "}
-              <strong>Deploy Now</strong> to watch live logs stream to completion.
-            </li>
-          </ol>
+        <div className="relative mt-12 overflow-hidden rounded-3xl border border-[#2c2319] bg-[#14110e] p-8 text-[#f7f3ec] shadow-2xl">
+          <div className="qh-amber-glow pointer-events-none absolute inset-0" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 text-base font-medium text-[#f7f3ec]">
+              <Globe className="h-5 w-5 text-[#f4ba4a]" />
+              Quickstart: Deploy Your First Project
+            </div>
+            <p className="mt-1 text-xs text-[#9a9084]">
+              Follow these steps to configure credentials and launch your first isolated build.
+            </p>
+            <ol className="mt-5 list-decimal space-y-2 pl-5 text-xs leading-relaxed text-[#d7cfc3] sm:text-sm">
+              <li>
+                Create a QuantumHost account via{" "}
+                <Link href="/register" className="text-[#f4ba4a] hover:underline">
+                  /register
+                </Link>{" "}
+                or sign in with GitHub.
+              </li>
+              <li>
+                Connect a GitHub account in{" "}
+                <Link href="/settings" className="text-[#f4ba4a] hover:underline">
+                  Account Settings
+                </Link>{" "}
+                using OAuth or a fine-grained Personal Access Token.
+              </li>
+              <li>
+                Import a repository in{" "}
+                <Link href="/projects/new" className="text-[#f4ba4a] hover:underline">
+                  New Project
+                </Link>
+                , inspect its detected framework preset, and add encrypted environment variables.
+              </li>
+              <li>
+                Start Redis and the isolated build worker (`npm run worker:dev`) and click{" "}
+                <strong>Deploy Now</strong> to watch live logs stream to completion.
+              </li>
+            </ol>
 
-          <div className="mt-6">
-            <Button asChild size="sm">
-              <Link href={user ? "/projects/new" : "/register"}>
-                {user ? "Import Repository" : "Create Account"}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="mt-6">
+              <Button asChild size="sm">
+                <Link href={user ? "/projects/new" : "/register"}>
+                  {user ? "Import Repository" : "Create Account"}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </main>

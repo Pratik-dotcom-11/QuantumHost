@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ArrowUpRight, Rocket } from "lucide-react";
 import { requirePageUser } from "@/lib/auth";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
+import { DeploymentStatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DeploymentStatusBadge } from "@/components/status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +28,10 @@ export default async function DeploymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Deployments</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
+          Deployments
+        </h1>
+        <p className="mt-1 text-sm text-[#9a9084]">
           Global build history, artifacts, durations, and live preview links.
         </p>
       </div>
@@ -48,7 +50,7 @@ export default async function DeploymentsPage() {
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase text-muted-foreground">
+              <thead className="border-b border-[#26201a] text-xs uppercase text-[#9a9084]">
                 <tr>
                   <th className="pb-3 pr-4">Deployment</th>
                   <th className="pb-3 pr-4">Status</th>
@@ -59,45 +61,45 @@ export default async function DeploymentsPage() {
                   <th className="pb-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-[#221c16]">
                 {deployments.map((dep) => {
                   const proj = projectMap.get(dep.project_id);
                   return (
-                    <tr key={dep.id} className="hover:bg-secondary/30">
+                    <tr key={dep.id} className="hover:bg-[#191410]">
                       <td className="py-3 pr-4">
                         <Link
                           href={`/deployments/${dep.id}`}
-                          className="font-medium text-foreground hover:text-[#1d5bff]"
+                          className="font-medium text-[#f7f3ec] hover:text-[#f4ba4a]"
                         >
                           {proj?.name || "Project"}{" "}
-                          <span className="font-mono text-xs text-muted-foreground">
+                          <span className="font-mono text-xs text-[#9a9084]">
                             #{dep.deployment_number}
                           </span>
                         </Link>
-                        <p className="max-w-xs truncate text-xs text-muted-foreground">
+                        <p className="max-w-xs truncate text-xs text-[#9a9084]">
                           {dep.git_commit_message || dep.trigger_source}
                         </p>
                       </td>
                       <td className="py-3 pr-4">
                         <DeploymentStatusBadge status={dep.status} />
                       </td>
-                      <td className="py-3 pr-4 font-mono text-xs text-[#525b6c]">
+                      <td className="py-3 pr-4 font-mono text-xs text-[#d7cfc3]">
                         {dep.git_branch || "main"}
                       </td>
-                      <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">
+                      <td className="py-3 pr-4 font-mono text-xs text-[#9a9084]">
                         {formatDuration(dep.build_duration_ms)}
                       </td>
-                      <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">
+                      <td className="py-3 pr-4 font-mono text-xs text-[#9a9084]">
                         {formatBytes(dep.artifact_size_bytes)}
                       </td>
-                      <td className="py-3 pr-4 text-xs text-muted-foreground">
+                      <td className="py-3 pr-4 text-xs text-[#9a9084]">
                         {formatRelativeTime(dep.created_at)}
                       </td>
                       <td className="py-3 text-right">
                         <div className="inline-flex items-center gap-2">
                           <Link
                             href={`/deployments/${dep.id}`}
-                            className="text-xs font-medium text-[#1d5bff] hover:underline"
+                            className="text-xs font-medium text-[#f4ba4a] hover:underline"
                           >
                             Logs
                           </Link>
@@ -105,7 +107,7 @@ export default async function DeploymentsPage() {
                             <Link
                               href={`/d/${dep.id}`}
                               target="_blank"
-                              className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
+                              className="inline-flex items-center gap-0.5 text-xs text-[#9a9084] hover:text-[#f7f3ec]"
                             >
                               Preview
                               <ArrowUpRight className="h-3 w-3" />

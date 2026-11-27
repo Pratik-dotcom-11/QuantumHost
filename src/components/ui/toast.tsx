@@ -55,31 +55,31 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={item.id}
             role="status"
-            className={`pointer-events-auto flex items-start gap-3 rounded-xl border bg-white p-3.5 shadow-xl shadow-slate-900/10 transition-all ${
+            className={`pointer-events-auto flex items-start gap-3 rounded-xl border bg-[#16120e] p-3.5 text-[#f7f3ec] shadow-2xl shadow-black/50 transition-all ${
               item.variant === "success"
-                ? "border-emerald-200 text-[#0b0f19]"
+                ? "border-emerald-500/35"
                 : item.variant === "error"
-                ? "border-rose-200 text-[#0b0f19]"
-                : "border-blue-200 text-[#0b0f19]"
+                ? "border-rose-500/35"
+                : "border-[#d49b4b]/35"
             }`}
           >
             {item.variant === "success" ? (
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
             ) : item.variant === "error" ? (
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
             ) : (
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#1d5bff]" />
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#f4ba4a]" />
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold">{item.title}</p>
+              <p className="text-xs font-semibold text-[#f7f3ec]">{item.title}</p>
               {item.description ? (
-                <p className="mt-0.5 text-xs text-[#525b6c]">{item.description}</p>
+                <p className="mt-0.5 text-xs text-[#9a9084]">{item.description}</p>
               ) : null}
             </div>
             <button
               type="button"
               onClick={() => dismiss(item.id)}
-              className="rounded p-0.5 text-slate-400 hover:text-[#0b0f19] cursor-pointer"
+              className="rounded p-0.5 text-[#7d746b] hover:text-[#f7f3ec] cursor-pointer"
               aria-label="Dismiss notification"
             >
               <X className="h-3.5 w-3.5" />

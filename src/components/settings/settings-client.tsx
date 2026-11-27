@@ -184,10 +184,10 @@ export function SettingsClient({
     <div className="space-y-6">
       {feedback ? (
         <div
-          className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
+          className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
             feedback.type === "ok"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-700"
+              ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-300"
+              : "border-rose-500/35 bg-rose-500/12 text-rose-300"
           }`}
         >
           {feedback.type === "ok" ? (
@@ -204,7 +204,7 @@ export function SettingsClient({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-[#1d5bff]" />
+              <User className="h-5 w-5 text-[#f4ba4a]" />
               Account Profile
             </CardTitle>
             <Badge variant="violet">{initialProfile.plan} plan</Badge>
@@ -244,7 +244,7 @@ export function SettingsClient({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Github className="h-5 w-5 text-[#1d5bff]" />
+            <Github className="h-5 w-5 text-[#f4ba4a]" />
             GitHub Account Connections
           </CardTitle>
           <CardDescription>
@@ -262,7 +262,7 @@ export function SettingsClient({
                 </a>
               </Button>
             ) : (
-              <span className="rounded-lg border border-border bg-[#f8f9fb] px-3 py-2 text-xs text-muted-foreground">
+              <span className="rounded-xl border border-[#26201a] bg-[#0f0c0a] px-3 py-2 text-xs text-[#9a9084]">
                 GitHub OAuth App not configured (`GITHUB_CLIENT_ID`). Use Personal Access Token
                 below.
               </span>
@@ -298,7 +298,7 @@ export function SettingsClient({
               {connections.map((conn) => (
                 <div
                   key={conn.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-[#f8f9fb] px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[#26201a] bg-[#0f0c0a] px-4 py-3"
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ export function SettingsClient({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-[#1d5bff]" />
+            <Sparkles className="h-5 w-5 text-[#f4ba4a]" />
             AI Build Diagnostics Provider
           </CardTitle>
           <CardDescription>
@@ -338,7 +338,7 @@ export function SettingsClient({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveAi} className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border border-border bg-[#f8f9fb] p-3.5">
+            <div className="flex items-center justify-between rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3.5">
               <div>
                 <p className="text-sm font-medium">Enable AI Diagnostics</p>
                 <p className="text-xs text-muted-foreground">

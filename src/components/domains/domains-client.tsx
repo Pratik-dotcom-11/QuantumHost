@@ -188,10 +188,10 @@ export function DomainsClient({
 
       {feedback ? (
         <div
-          className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
+          className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
             feedback.type === "ok"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-700"
+              ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-300"
+              : "border-rose-500/35 bg-rose-500/12 text-rose-300"
           }`}
         >
           {feedback.type === "ok" ? (
@@ -266,21 +266,21 @@ export function DomainsClient({
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto rounded-lg border border-border bg-[#f8f9fb] p-3">
+                  <div className="overflow-x-auto rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
                     <table className="w-full text-left font-mono text-xs">
-                      <thead className="border-b border-border text-muted-foreground">
+                      <thead className="border-b border-[#26201a] text-[#9a9084]">
                         <tr>
                           <th className="pb-2 pr-4">Type</th>
                           <th className="pb-2 pr-4">Host / Name</th>
                           <th className="pb-2">Value</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border/50">
+                      <tbody className="divide-y divide-[#221c16]">
                         {records.map((rec, idx) => (
                           <tr key={idx}>
-                            <td className="py-2 pr-4 font-semibold text-[#1d5bff]">{rec.type}</td>
-                            <td className="py-2 pr-4 text-[#0b0f19]">{rec.name}</td>
-                            <td className="py-2 break-all text-[#525b6c]">{rec.value}</td>
+                            <td className="py-2 pr-4 font-semibold text-[#f4ba4a]">{rec.type}</td>
+                            <td className="py-2 pr-4 text-[#f7f3ec]">{rec.name}</td>
+                            <td className="py-2 break-all text-[#9a9084]">{rec.value}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -74,8 +74,10 @@ export default async function UsagePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Resource Consumption</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
+          Resource Consumption
+        </h1>
+        <p className="mt-1 text-sm text-[#9a9084]">
           Real build compute, artifact storage, served bandwidth, HTTP traffic, and AI diagnostics usage.
         </p>
       </div>
@@ -84,10 +86,10 @@ export default async function UsagePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription>Build Compute</CardDescription>
-            <Clock className="h-4 w-4 text-[#1d5bff]" />
+            <Clock className="h-4 w-4 text-[#f4ba4a]" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold">{buildSeconds.toFixed(1)}s</div>
+            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{buildSeconds.toFixed(1)}s</div>
           </CardContent>
         </Card>
 
@@ -97,17 +99,17 @@ export default async function UsagePage() {
             <Database className="h-4 w-4 text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold">{formatBytes(storageBytes)}</div>
+            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(storageBytes)}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription>Bandwidth Served</CardDescription>
-            <Globe className="h-4 w-4 text-[#1d5bff]" />
+            <Globe className="h-4 w-4 text-[#f4ba4a]" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold">{formatBytes(bandwidthBytes)}</div>
+            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(bandwidthBytes)}</div>
           </CardContent>
         </Card>
 
@@ -117,17 +119,17 @@ export default async function UsagePage() {
             <Cpu className="h-4 w-4 text-amber-400" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold">{httpRequests.toLocaleString()}</div>
+            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{httpRequests.toLocaleString()}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription>AI Tokens</CardDescription>
-            <Sparkles className="h-4 w-4 text-[#1d5bff]" />
+            <Sparkles className="h-4 w-4 text-[#f4ba4a]" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-xl font-bold">{aiTokens.toLocaleString()}</div>
+            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{aiTokens.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -139,10 +141,10 @@ export default async function UsagePage() {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {projectRows.size === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">No projects created yet.</p>
+            <p className="py-4 text-sm text-[#9a9084]">No projects created yet.</p>
           ) : (
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase text-muted-foreground">
+              <thead className="border-b border-[#26201a] text-xs uppercase text-[#9a9084]">
                 <tr>
                   <th className="pb-3 pr-4">Project</th>
                   <th className="pb-3 pr-4">Deployments</th>
@@ -152,17 +154,17 @@ export default async function UsagePage() {
                   <th className="pb-3">Requests</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60 font-mono text-xs">
+              <tbody className="divide-y divide-[#221c16] font-mono text-xs">
                 {Array.from(projectRows.values()).map((row) => (
-                  <tr key={row.slug}>
-                    <td className="py-3 pr-4 font-sans text-sm font-medium text-foreground">
+                  <tr key={row.slug} className="hover:bg-[#191410]">
+                    <td className="py-3 pr-4 font-sans text-sm font-medium text-[#f7f3ec]">
                       {row.name}
                     </td>
-                    <td className="py-3 pr-4 text-[#525b6c]">{row.deployments}</td>
-                    <td className="py-3 pr-4 text-[#525b6c]">{row.buildSeconds.toFixed(1)}s</td>
-                    <td className="py-3 pr-4 text-[#525b6c]">{formatBytes(row.storageBytes)}</td>
-                    <td className="py-3 pr-4 text-[#525b6c]">{formatBytes(row.bandwidthBytes)}</td>
-                    <td className="py-3 text-[#525b6c]">{row.httpRequests.toLocaleString()}</td>
+                    <td className="py-3 pr-4 text-[#d7cfc3]">{row.deployments}</td>
+                    <td className="py-3 pr-4 text-[#d7cfc3]">{row.buildSeconds.toFixed(1)}s</td>
+                    <td className="py-3 pr-4 text-[#d7cfc3]">{formatBytes(row.storageBytes)}</td>
+                    <td className="py-3 pr-4 text-[#d7cfc3]">{formatBytes(row.bandwidthBytes)}</td>
+                    <td className="py-3 text-[#d7cfc3]">{row.httpRequests.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

@@ -143,7 +143,7 @@ export function MonitoringClient({
                   />
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-[#f8f9fb] p-3 text-xs">
+                  <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3 text-xs">
                     <div>
                       <p className="text-muted-foreground">HTTP Status</p>
                       <p className="mt-0.5 font-mono font-semibold text-foreground">

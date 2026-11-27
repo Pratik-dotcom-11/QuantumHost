@@ -39,7 +39,7 @@ export function CapabilityTabs() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-4 border-b border-[#e5e8ef] pb-6 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 border-b border-[#26201a] pb-6 sm:grid-cols-4">
         {CAPABILITIES.map((cap) => {
           const isActive = cap.id === activeId;
           return (
@@ -47,23 +47,23 @@ export function CapabilityTabs() {
               key={cap.id}
               type="button"
               onClick={() => setActiveId(cap.id)}
-              className={`group text-left transition-colors cursor-pointer ${
+              className={`group text-left transition-opacity cursor-pointer ${
                 isActive ? "opacity-100" : "opacity-50 hover:opacity-85"
               }`}
             >
-              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[#1d5bff]">
+              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[#f4ba4a]">
                 {cap.eyebrow}
               </p>
               <p
-                className={`font-display mt-1.5 text-xl font-semibold tracking-[-0.025em] sm:text-2xl ${
-                  isActive ? "text-[#0a0e17]" : "text-[#556070]"
+                className={`font-display mt-1.5 text-xl font-medium tracking-[-0.025em] sm:text-2xl ${
+                  isActive ? "text-[#f7f3ec]" : "text-[#9a9084]"
                 }`}
               >
                 {cap.title}
               </p>
               <div
                 className={`mt-3 h-0.5 w-12 rounded-full transition-all ${
-                  isActive ? "bg-[#1d5bff]" : "bg-transparent"
+                  isActive ? "bg-[#f4ba4a]" : "bg-transparent"
                 }`}
               />
             </button>
@@ -71,7 +71,7 @@ export function CapabilityTabs() {
         })}
       </div>
 
-      <p className="max-w-xl text-sm leading-relaxed text-[#556070]">
+      <p className="max-w-xl text-sm leading-relaxed text-[#a89e91]">
         {current.description}
       </p>
     </div>

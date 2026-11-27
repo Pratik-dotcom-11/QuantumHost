@@ -5,26 +5,26 @@
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Minimal Architectural Color Palette */
-  --color-background: #f9fafb;
-  --color-foreground: #0a0e17;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0e17;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0a0e17;
-  --color-primary: #1d5bff;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f4f9;
-  --color-secondary-foreground: #0a0e17;
-  --color-muted: #f3f5f8;
-  --color-muted-foreground: #556070;
-  --color-accent: #eef3ff;
-  --color-accent-foreground: #1d5bff;
-  --color-destructive: #dc2626;
+  /* Obsidian & Solar-Amber Architectural Palette (Reference-Matched) */
+  --color-background: #0b0907;
+  --color-foreground: #f7f3ec;
+  --color-card: #14110e;
+  --color-card-foreground: #f7f3ec;
+  --color-popover: #181410;
+  --color-popover-foreground: #f7f3ec;
+  --color-primary: #f4ba4a;
+  --color-primary-foreground: #110d08;
+  --color-secondary: #1d1813;
+  --color-secondary-foreground: #f2ece2;
+  --color-muted: #17130f;
+  --color-muted-foreground: #9a9084;
+  --color-accent: #2a2116;
+  --color-accent-foreground: #f4ba4a;
+  --color-destructive: #e5484d;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e5e8ef;
-  --color-input: #d5dbe6;
-  --color-ring: #1d5bff;
+  --color-border: #26201a;
+  --color-input: #2d261f;
+  --color-ring: #f4ba4a;
 }
 
 * {
@@ -60,22 +60,20 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
-.qh-light-grid {
+.qh-grid-subtle {
   background-image:
-    linear-gradient(to right, rgba(10, 14, 23, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(10, 14, 23, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgba(244, 186, 74, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(244, 186, 74, 0.035) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
-.qh-dark-grid {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 36px 36px;
-}
-
-.qh-sky-band {
-  background: linear-gradient(180deg, #f9fafb 0%, #ebf2fc 32%, #edf4fd 72%, #f9fafb 100%);
+.qh-amber-glow {
+  background: radial-gradient(
+    ellipse 70% 50% at 50% 0%,
+    rgba(244, 186, 74, 0.12) 0%,
+    rgba(212, 132, 42, 0.04) 45%,
+    transparent 80%
+  );
 }
 
 ::-webkit-scrollbar {
@@ -84,14 +82,14 @@ kbd {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f3f5f8;
+  background: #0b0907;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cfd6e3;
+  background: #2e271f;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #473c30;
 }

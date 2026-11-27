@@ -204,7 +204,7 @@ export function NewProjectWizard({
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Github className="h-4 w-4 text-[#1d5bff]" />
+            <Github className="h-4 w-4 text-[#f4ba4a]" />
             Import Git Repository
           </CardTitle>
           <CardDescription>
@@ -230,8 +230,8 @@ export function NewProjectWizard({
               </div>
 
               {loadingRepos ? (
-                <div className="flex items-center gap-2 py-8 text-xs text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#1d5bff]" />
+                <div className="flex items-center gap-2 py-8 text-xs text-[#9a9084]">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#f4ba4a]" />
                   Fetching repositories from GitHub...
                 </div>
               ) : (
@@ -243,10 +243,10 @@ export function NewProjectWizard({
                         key={repo.id}
                         type="button"
                         onClick={() => handleSelectRepo(repo)}
-                        className={`w-full rounded-lg border p-3 text-left transition-colors cursor-pointer ${
+                        className={`w-full rounded-xl border p-3 text-left transition-colors cursor-pointer ${
                           active
-                            ? "border-[#1d5bff] bg-blue-50"
-                            : "border-border bg-[#f8f9fb] hover:border-slate-600"
+                            ? "border-[#f4ba4a] bg-[#2a1d0e]/75"
+                            : "border-[#26201a] bg-[#0f0c0a] hover:border-[#d49b4b]/50"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -272,11 +272,11 @@ export function NewProjectWizard({
               )}
             </>
           ) : (
-            <div className="space-y-3 rounded-lg border border-dashed border-border bg-[#f8f9fb] p-4 text-xs text-muted-foreground">
+            <div className="space-y-3 rounded-xl border border-dashed border-[#2d261f] bg-[#0f0c0a] p-4 text-xs text-[#9a9084]">
               <p>No GitHub accounts connected yet.</p>
               <p>
                 You can connect GitHub in Settings for private repositories and auto-webhooks, or enter
-                a public repository path (e.g. <code className="text-[#1d5bff]">owner/repo</code>) on the right.
+                a public repository path (e.g. <code className="text-[#f4ba4a]">owner/repo</code>) on the right.
               </p>
               <Button asChild variant="outline" size="sm">
                 <Link href="/settings">Connect GitHub Account</Link>
@@ -297,7 +297,7 @@ export function NewProjectWizard({
               </CardDescription>
             </div>
             {detecting ? (
-              <span className="inline-flex items-center gap-1.5 text-xs text-[#1d5bff]">
+              <span className="inline-flex items-center gap-1.5 text-xs text-[#f4ba4a]">
                 <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                 Inspecting package.json...
               </span>
@@ -446,7 +446,7 @@ export function NewProjectWizard({
               </div>
             </div>
 
-            <div className="space-y-3 rounded-lg border border-border bg-[#f8f9fb] p-4">
+            <div className="space-y-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Auto-deploy on Git Push</p>

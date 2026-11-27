@@ -111,10 +111,10 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#0b0f19]">
+          <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
             Control Plane Overview
           </h1>
-          <p className="mt-1 text-sm text-[#525b6c]">
+          <p className="mt-1 text-sm text-[#9a9084]">
             Real-time projects, deployment health, availability probes, and resource consumption.
           </p>
         </div>
@@ -147,11 +147,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription>Total Projects</CardDescription>
-            <Boxes className="h-4 w-4 text-[#1d5bff]" />
+            <Boxes className="h-4 w-4 text-[#f4ba4a]" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-2xl font-bold text-[#0b0f19]">{totalProjects}</div>
-            <p className="mt-1 text-xs text-[#525b6c]">
+            <div className="font-mono text-2xl font-bold text-[#f7f3ec]">{totalProjects}</div>
+            <p className="mt-1 text-xs text-[#9a9084]">
               {activeCount} serving active live URLs
             </p>
           </CardContent>
@@ -160,13 +160,13 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription>Successful Deployments</CardDescription>
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-2xl font-bold text-emerald-600">
+            <div className="font-mono text-2xl font-bold text-emerald-400">
               {successfulDeployments}
             </div>
-            <p className="mt-1 text-xs text-[#525b6c]">
+            <p className="mt-1 text-xs text-[#9a9084]">
               {totalDeployments > 0 ? `${successRate}% build success rate` : "No builds run yet"}
             </p>
           </CardContent>
@@ -175,13 +175,13 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription>Failed Deployments</CardDescription>
-            <XCircle className="h-4 w-4 text-rose-600" />
+            <XCircle className="h-4 w-4 text-rose-400" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-2xl font-bold text-rose-600">
+            <div className="font-mono text-2xl font-bold text-rose-400">
               {failedDeployments}
             </div>
-            <p className="mt-1 text-xs text-[#525b6c]">
+            <p className="mt-1 text-xs text-[#9a9084]">
               {inProgressDeployments > 0
                 ? `${inProgressDeployments} currently queued/building`
                 : "AI failure diagnostics ready"}
@@ -189,16 +189,16 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#060911] text-white border-[#0b0f19]">
+        <Card className="border-[#d49b4b]/40 bg-[#18130d]">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription className="text-slate-300">Website Health</CardDescription>
-            <Activity className="h-4 w-4 text-[#60a5fa]" />
+            <CardDescription className="text-[#edd19a]">Website Health</CardDescription>
+            <Activity className="h-4 w-4 text-[#f4ba4a]" />
           </CardHeader>
           <CardContent>
-            <div className="font-mono text-2xl font-bold text-white">
+            <div className="font-mono text-2xl font-bold text-[#f7f3ec]">
               {monitorsUp}/{monitorList.length}
             </div>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-[#9a9084]">
               {avgLatencyMs !== null
                 ? `Avg probe latency ${avgLatencyMs} ms`
                 : `${monitorsDegraded} degraded · ${monitorsDown} down`}
@@ -217,21 +217,21 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#1d1813]">
               {totalDeployments > 0 ? (
                 <>
                   <div
-                    className="bg-emerald-500 transition-all"
+                    className="bg-emerald-400 transition-all"
                     style={{ width: `${(successfulDeployments / totalDeployments) * 100}%` }}
                     title={`Ready: ${successfulDeployments}`}
                   />
                   <div
-                    className="bg-[#1d5bff] transition-all"
+                    className="bg-[#f4ba4a] transition-all"
                     style={{ width: `${(inProgressDeployments / totalDeployments) * 100}%` }}
                     title={`Active: ${inProgressDeployments}`}
                   />
                   <div
-                    className="bg-rose-500 transition-all"
+                    className="bg-rose-400 transition-all"
                     style={{ width: `${(failedDeployments / totalDeployments) * 100}%` }}
                     title={`Failed: ${failedDeployments}`}
                   />
@@ -240,30 +240,30 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-xs">
-              <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-                <span className="flex items-center gap-1.5 text-[#525b6c]">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+                <span className="flex items-center gap-1.5 text-[#9a9084]">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
                   Ready
                 </span>
-                <p className="mt-1 font-mono text-base font-semibold text-[#0b0f19]">
+                <p className="mt-1 font-mono text-base font-semibold text-[#f7f3ec]">
                   {successfulDeployments}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-                <span className="flex items-center gap-1.5 text-[#525b6c]">
-                  <span className="h-2 w-2 rounded-full bg-[#1d5bff]" />
+              <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+                <span className="flex items-center gap-1.5 text-[#9a9084]">
+                  <span className="h-2 w-2 rounded-full bg-[#f4ba4a]" />
                   In Queue / Build
                 </span>
-                <p className="mt-1 font-mono text-base font-semibold text-[#0b0f19]">
+                <p className="mt-1 font-mono text-base font-semibold text-[#f7f3ec]">
                   {inProgressDeployments}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-                <span className="flex items-center gap-1.5 text-[#525b6c]">
-                  <span className="h-2 w-2 rounded-full bg-rose-500" />
+              <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+                <span className="flex items-center gap-1.5 text-[#9a9084]">
+                  <span className="h-2 w-2 rounded-full bg-rose-400" />
                   Failed
                 </span>
-                <p className="mt-1 font-mono text-base font-semibold text-[#0b0f19]">
+                <p className="mt-1 font-mono text-base font-semibold text-[#f7f3ec]">
                   {failedDeployments}
                 </p>
               </div>
@@ -282,39 +282,39 @@ export default async function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-              <div className="flex items-center gap-1.5 text-[11px] text-[#525b6c]">
-                <Clock className="h-3.5 w-3.5 text-[#1d5bff]" />
+            <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+              <div className="flex items-center gap-1.5 text-[11px] text-[#9a9084]">
+                <Clock className="h-3.5 w-3.5 text-[#f4ba4a]" />
                 Build Time
               </div>
-              <p className="mt-1.5 font-mono text-sm font-semibold text-[#0b0f19]">
+              <p className="mt-1.5 font-mono text-sm font-semibold text-[#f7f3ec]">
                 {buildSeconds.toFixed(1)}s
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-              <div className="flex items-center gap-1.5 text-[11px] text-[#525b6c]">
-                <Cpu className="h-3.5 w-3.5 text-[#1d5bff]" />
+            <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+              <div className="flex items-center gap-1.5 text-[11px] text-[#9a9084]">
+                <Cpu className="h-3.5 w-3.5 text-[#f4ba4a]" />
                 Storage
               </div>
-              <p className="mt-1.5 font-mono text-sm font-semibold text-[#0b0f19]">
+              <p className="mt-1.5 font-mono text-sm font-semibold text-[#f7f3ec]">
                 {formatBytes(storageBytes)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-              <div className="flex items-center gap-1.5 text-[11px] text-[#525b6c]">
-                <Globe className="h-3.5 w-3.5 text-[#1d5bff]" />
+            <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+              <div className="flex items-center gap-1.5 text-[11px] text-[#9a9084]">
+                <Globe className="h-3.5 w-3.5 text-[#f4ba4a]" />
                 Bandwidth
               </div>
-              <p className="mt-1.5 font-mono text-sm font-semibold text-[#0b0f19]">
+              <p className="mt-1.5 font-mono text-sm font-semibold text-[#f7f3ec]">
                 {formatBytes(bandwidthBytes)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-[#f8f9fb] p-3">
-              <div className="flex items-center gap-1.5 text-[11px] text-[#525b6c]">
-                <Rocket className="h-3.5 w-3.5 text-[#1d5bff]" />
+            <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+              <div className="flex items-center gap-1.5 text-[11px] text-[#9a9084]">
+                <Rocket className="h-3.5 w-3.5 text-[#f4ba4a]" />
                 Requests
               </div>
-              <p className="mt-1.5 font-mono text-sm font-semibold text-[#0b0f19]">
+              <p className="mt-1.5 font-mono text-sm font-semibold text-[#f7f3ec]">
                 {httpRequests.toLocaleString()}
               </p>
             </div>
@@ -355,21 +355,21 @@ export default async function DashboardPage() {
                   return (
                     <div
                       key={project.id}
-                      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-[#f8f9fb] p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <Link
                             href={`/projects/${project.id}`}
-                            className="truncate font-semibold text-[#0b0f19] hover:text-[#1d5bff]"
+                            className="truncate font-semibold text-[#f7f3ec] hover:text-[#f4ba4a]"
                           >
                             {project.name}
                           </Link>
-                          <span className="rounded bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11px] text-[#525b6c]">
+                          <span className="rounded-full border border-[#2a231c] bg-[#1a1511] px-2.5 py-0.5 font-mono text-[11px] text-[#9a9084]">
                             {project.framework}
                           </span>
                         </div>
-                        <p className="mt-1 truncate font-mono text-xs text-[#525b6c]">
+                        <p className="mt-1 truncate font-mono text-xs text-[#9a9084]">
                           {project.repo_full_name || "No repository linked"} ·{" "}
                           {project.default_branch}
                         </p>
@@ -424,18 +424,18 @@ export default async function DashboardPage() {
                     <Link
                       key={dep.id}
                       href={`/deployments/${dep.id}`}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#f8f9fb] px-3.5 py-2.5 transition-colors hover:border-[#1d5bff]/40"
+                      className="flex items-center justify-between rounded-xl border border-[#26201a] bg-[#0f0c0a] px-3.5 py-2.5 transition-colors hover:border-[#d49b4b]/45"
                     >
                       <div className="min-w-0 pr-3">
                         <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium text-[#0b0f19]">
+                          <span className="truncate text-sm font-medium text-[#f7f3ec]">
                             {proj?.name || "Project"}
                           </span>
-                          <span className="font-mono text-xs text-[#525b6c]">
+                          <span className="font-mono text-xs text-[#9a9084]">
                             #{dep.deployment_number}
                           </span>
                         </div>
-                        <p className="mt-0.5 truncate font-mono text-[11px] text-[#525b6c]">
+                        <p className="mt-0.5 truncate font-mono text-[11px] text-[#9a9084]">
                           {dep.git_branch || "main"} · {formatDuration(dep.build_duration_ms)} ·{" "}
                           {formatRelativeTime(dep.created_at)}
                         </p>
@@ -462,12 +462,12 @@ export default async function DashboardPage() {
         <CardContent className="grid gap-3 sm:grid-cols-3">
           <Link
             href="/domains"
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-[#f8f9fb] p-3.5 transition-colors hover:border-[#1d5bff]/40"
+            className="flex items-center gap-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3.5 transition-colors hover:border-[#d49b4b]/45"
           >
-            <Globe className="h-5 w-5 text-[#1d5bff]" />
+            <Globe className="h-5 w-5 text-[#f4ba4a]" />
             <div>
-              <p className="text-sm font-medium text-[#0b0f19]">Custom Domains</p>
-              <p className="text-xs text-[#525b6c]">
+              <p className="text-sm font-medium text-[#f7f3ec]">Custom Domains</p>
+              <p className="text-xs text-[#9a9084]">
                 {(domains ?? []).filter((d) => d.verification_status === "verified").length} verified /{" "}
                 {domains?.length ?? 0} total
               </p>
@@ -476,12 +476,12 @@ export default async function DashboardPage() {
 
           <Link
             href="/monitoring"
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-[#f8f9fb] p-3.5 transition-colors hover:border-[#1d5bff]/40"
+            className="flex items-center gap-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3.5 transition-colors hover:border-[#d49b4b]/45"
           >
-            <Activity className="h-5 w-5 text-emerald-600" />
+            <Activity className="h-5 w-5 text-emerald-400" />
             <div>
-              <p className="text-sm font-medium text-[#0b0f19]">Availability Probes</p>
-              <p className="text-xs text-[#525b6c]">
+              <p className="text-sm font-medium text-[#f7f3ec]">Availability Probes</p>
+              <p className="text-xs text-[#9a9084]">
                 Run live HTTP checks and latency inspection
               </p>
             </div>
@@ -489,12 +489,12 @@ export default async function DashboardPage() {
 
           <Link
             href="/settings"
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-[#f8f9fb] p-3.5 transition-colors hover:border-[#1d5bff]/40"
+            className="flex items-center gap-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3.5 transition-colors hover:border-[#d49b4b]/45"
           >
-            <GitBranch className="h-5 w-5 text-[#1d5bff]" />
+            <GitBranch className="h-5 w-5 text-[#f4ba4a]" />
             <div>
-              <p className="text-sm font-medium text-[#0b0f19]">GitHub &amp; AI Settings</p>
-              <p className="text-xs text-[#525b6c]">
+              <p className="text-sm font-medium text-[#f7f3ec]">GitHub &amp; AI Settings</p>
+              <p className="text-xs text-[#9a9084]">
                 Manage repository tokens &amp; LLM credentials
               </p>
             </div>

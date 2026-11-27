@@ -275,8 +275,10 @@ export function ProjectDetailClient({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
-            <span className="rounded-md border border-border bg-secondary px-2 py-0.5 font-mono text-xs text-[#1d5bff]">
+            <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
+              {project.name}
+            </h1>
+            <span className="rounded-full border border-[#d49b4b]/35 bg-[#2a1d0e]/70 px-2.5 py-0.5 font-mono text-xs text-[#f4ba4a]">
               {project.framework}
             </span>
           </div>
@@ -308,10 +310,10 @@ export function ProjectDetailClient({
 
       {feedback ? (
         <div
-          className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
+          className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
             feedback.type === "ok"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-700"
+              ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-300"
+              : "border-rose-500/35 bg-rose-500/12 text-rose-300"
           }`}
         >
           {feedback.type === "ok" ? (
@@ -350,19 +352,19 @@ export function ProjectDetailClient({
                     return (
                       <div
                         key={dep.id}
-                        className="flex flex-col gap-3 rounded-lg border border-border bg-[#f8f9fb] p-4 sm:flex-row sm:items-center sm:justify-between"
+                        className="flex flex-col gap-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-4 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <Link
                               href={`/deployments/${dep.id}`}
-                              className="font-mono text-sm font-semibold text-foreground hover:text-[#1d5bff]"
+                              className="font-mono text-sm font-semibold text-[#f7f3ec] hover:text-[#f4ba4a]"
                             >
                               #{dep.deployment_number}
                             </Link>
                             <DeploymentStatusBadge status={dep.status} />
                             {isActive ? (
-                              <span className="rounded-full border border-[#1d5bff]/40 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#1d5bff]">
+                              <span className="rounded-full border border-[#d49b4b]/40 bg-[#2a1d0e]/75 px-2.5 py-0.5 text-[11px] font-medium text-[#f4ba4a]">
                                 Current Production
                               </span>
                             ) : null}
@@ -413,7 +415,7 @@ export function ProjectDetailClient({
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <KeyRound className="h-4 w-4 text-[#1d5bff]" />
+                  <KeyRound className="h-4 w-4 text-[#f4ba4a]" />
                   Add Variable
                 </CardTitle>
                 <CardDescription>
@@ -488,7 +490,7 @@ export function ProjectDetailClient({
                     {envVars.map((v) => (
                       <div
                         key={v.id}
-                        className="flex items-center justify-between rounded-lg border border-border bg-[#f8f9fb] px-3.5 py-2.5"
+                        className="flex items-center justify-between rounded-xl border border-[#26201a] bg-[#0f0c0a] px-3.5 py-2.5"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -618,7 +620,7 @@ export function ProjectDetailClient({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-lg border border-border bg-[#f8f9fb] p-3.5">
+                  <div className="flex items-center justify-between rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3.5">
                     <div>
                       <p className="text-sm font-medium">Auto-deploy on Git Push</p>
                       <p className="text-xs text-muted-foreground">

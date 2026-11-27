@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cpu, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Cpu, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,42 +61,46 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="qh-light-grid flex min-h-screen flex-col items-center justify-center bg-[#f8f9fb] px-4 py-12">
-      <div className="mb-6 w-full max-w-md">
+    <div className="qh-grid-subtle relative flex min-h-screen flex-col items-center justify-center bg-[#0b0907] px-4 py-12 text-[#f7f3ec]">
+      <div className="qh-amber-glow pointer-events-none absolute inset-0" />
+
+      <div className="relative z-10 mb-6 w-full max-w-md">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#525b6c] hover:text-[#0b0f19]"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9a9084] transition-colors hover:text-[#f7f3ec]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to QuantumHost
         </Link>
       </div>
 
-      <Card className="w-full max-w-md border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+      <Card className="relative z-10 w-full max-w-md border-[#2a231b] bg-[#14110e]/95 shadow-2xl shadow-black/60 backdrop-blur-md">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#0b0f19] text-white">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-[#d49b4b]/35 bg-[#2a1d0e]/75 text-[#f4ba4a]">
             <Cpu className="h-5 w-5" />
           </div>
-          <CardTitle className="text-xl">Create your QuantumHost account</CardTitle>
+          <CardTitle className="text-xl font-medium text-[#f7f3ec]">
+            Create your QuantumHost account
+          </CardTitle>
           <CardDescription>
             Deploy Beyond Limits — provision isolated builds, custom domains, and live telemetry.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error ? (
-            <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+            <div className="flex items-start gap-2 rounded-xl border border-rose-500/35 bg-rose-500/12 p-3 text-xs text-rose-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           ) : null}
 
           {confirmationSent ? (
-            <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-              <div className="flex items-center gap-2 font-medium">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <div className="space-y-3 rounded-xl border border-emerald-500/35 bg-emerald-500/12 p-4 text-sm text-emerald-200">
+              <div className="flex items-center gap-2 font-medium text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" />
                 Check your inbox to verify your email
               </div>
-              <p className="text-xs text-emerald-800">
+              <p className="text-xs text-emerald-200/90">
                 We sent a confirmation link to <strong>{email}</strong>. Once confirmed, you can
                 sign in to QuantumHost.
               </p>
@@ -149,9 +153,9 @@ export default function RegisterPage() {
             </form>
           )}
 
-          <p className="text-center text-xs text-[#525b6c]">
+          <p className="text-center text-xs text-[#9a9084]">
             Already registered?{" "}
-            <Link href="/login" className="font-medium text-[#1d5bff] hover:underline">
+            <Link href="/login" className="font-medium text-[#f4ba4a] hover:underline">
               Sign in
             </Link>
           </p>

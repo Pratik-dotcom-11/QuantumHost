@@ -212,21 +212,23 @@ export function DeploymentDetailClient({
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
               href={`/projects/${deployment.project_id}`}
-              className="text-sm text-muted-foreground hover:text-[#1d5bff]"
+              className="text-sm text-[#9a9084] hover:text-[#f4ba4a]"
             >
               {projectName}
             </Link>
-            <span className="text-muted-foreground">/</span>
-            <h1 className="font-mono text-2xl font-bold">#{deployment.deployment_number}</h1>
+            <span className="text-[#5e564d]">/</span>
+            <h1 className="font-mono text-2xl font-bold text-[#f7f3ec]">
+              #{deployment.deployment_number}
+            </h1>
             <DeploymentStatusBadge status={deployment.status} />
             {isCurrentProduction ? (
-              <span className="rounded-full border border-[#1d5bff]/40 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#1d5bff]">
+              <span className="rounded-full border border-[#d49b4b]/40 bg-[#2a1d0e]/75 px-2.5 py-0.5 text-xs font-medium text-[#f4ba4a]">
                 Active Production
               </span>
             ) : null}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Branch <span className="font-mono text-[#525b6c]">{deployment.git_branch || "main"}</span>{" "}
+          <p className="mt-1 text-xs text-[#9a9084]">
+            Branch <span className="font-mono text-[#d7cfc3]">{deployment.git_branch || "main"}</span>{" "}
             · {deployment.trigger_source} · created {formatRelativeTime(deployment.created_at)}
           </p>
         </div>
@@ -326,14 +328,14 @@ export function DeploymentDetailClient({
 
       {/* AI Diagnosis Panel */}
       {deployment.ai_diagnosis ? (
-        <Card className="border-[#1d5bff]/30 bg-blue-50/70">
+        <Card className="border-[#d49b4b]/40 bg-[#1a140d]">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-[#1d5bff]">
+              <CardTitle className="flex items-center gap-2 text-[#f4ba4a]">
                 <Sparkles className="h-4 w-4" />
                 AI Build Failure Diagnosis
               </CardTitle>
-              <span className="font-mono text-xs text-muted-foreground">
+              <span className="font-mono text-xs text-[#9a9084]">
                 {deployment.ai_diagnosis.provider} / {deployment.ai_diagnosis.model} · confidence:{" "}
                 {deployment.ai_diagnosis.confidence}
               </span>
@@ -342,16 +344,16 @@ export function DeploymentDetailClient({
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9084]">
                 Root Cause
               </p>
-              <p className="mt-1 text-[#0b0f19]">{deployment.ai_diagnosis.rootCause}</p>
+              <p className="mt-1 text-[#f7f3ec]">{deployment.ai_diagnosis.rootCause}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9084]">
                 Suggested Fixes
               </p>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-[#0b0f19]">
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-[#e7dfd3]">
                 {deployment.ai_diagnosis.suggestedFixes.map((fix, idx) => (
                   <li key={idx}>{fix}</li>
                 ))}
@@ -363,19 +365,19 @@ export function DeploymentDetailClient({
 
       {/* Build Logs Terminal */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border pb-4">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[#26201a] pb-4">
           <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-[#1d5bff]" />
+            <Terminal className="h-4 w-4 text-[#f4ba4a]" />
             <CardTitle>Build Logs</CardTitle>
           </div>
           {isInProgress ? (
-            <span className="inline-flex items-center gap-1.5 text-xs text-[#1d5bff]">
+            <span className="inline-flex items-center gap-1.5 text-xs text-[#f4ba4a]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Streaming live output...
             </span>
           ) : null}
         </CardHeader>
-        <CardContent className="overflow-hidden rounded-b-2xl bg-[#060911] p-0">
+        <CardContent className="overflow-hidden rounded-b-2xl bg-[#090706] p-0">
           {deployment.error_summary ? (
             <div className="border-b border-rose-500/30 bg-rose-500/15 px-4 py-2.5 font-mono text-xs text-rose-300">
               Error: {deployment.error_summary}
@@ -383,7 +385,7 @@ export function DeploymentDetailClient({
           ) : null}
           <div className="max-h-[480px] overflow-y-auto p-4 font-mono text-xs leading-6">
             {logs.length === 0 ? (
-              <p className="text-slate-400">Waiting for worker log stream...</p>
+              <p className="text-[#9a9084]">Waiting for worker log stream...</p>
             ) : (
               logs.map((entry) => {
                 const colorClass =
@@ -392,12 +394,12 @@ export function DeploymentDetailClient({
                     : entry.level === "warn"
                     ? "text-amber-300"
                     : entry.level === "system"
-                    ? "text-[#60a5fa]"
-                    : "text-slate-200";
+                    ? "text-[#f4ba4a]"
+                    : "text-[#e7dfd3]";
 
                 return (
                   <div key={entry.id || entry.seq} className="flex gap-3">
-                    <span className="w-16 shrink-0 text-slate-500">[{entry.stage}]</span>
+                    <span className="w-16 shrink-0 text-[#6e665c]">[{entry.stage}]</span>
                     <span className={`whitespace-pre-wrap break-all ${colorClass}`}>
                       {entry.message}
                     </span>

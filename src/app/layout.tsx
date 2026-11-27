@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | QuantumHost",
   },
   description:
-    "The cloud hosting platform purpose-built for speed, isolation, and scale. Deploy Beyond Limits.",
+    "Deploy Beyond Limits. Isolated GitHub builds, immutable artifact delivery, custom DNS verification, and AI failure diagnostics.",
 };
 
 export default function RootLayout({
@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-background font-sans text-foreground antialiased selection:bg-[#1d5bff]/12 selection:text-[#1d5bff]">
+    <html lang="en" className="dark">
+      <body className="min-h-screen bg-[#0b0907] font-sans text-[#f7f3ec] antialiased selection:bg-[#f4ba4a]/25 selection:text-[#f7f3ec]">
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Cpu, Github, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, Cpu, Github, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,30 +74,32 @@ function LoginForm() {
   }
 
   return (
-    <div className="qh-light-grid flex min-h-screen flex-col items-center justify-center bg-[#f8f9fb] px-4 py-12">
-      <div className="mb-6 w-full max-w-md">
+    <div className="qh-grid-subtle relative flex min-h-screen flex-col items-center justify-center bg-[#0b0907] px-4 py-12 text-[#f7f3ec]">
+      <div className="qh-amber-glow pointer-events-none absolute inset-0" />
+
+      <div className="relative z-10 mb-6 w-full max-w-md">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#525b6c] hover:text-[#0b0f19]"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9a9084] transition-colors hover:text-[#f7f3ec]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to QuantumHost
         </Link>
       </div>
 
-      <Card className="w-full max-w-md border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+      <Card className="relative z-10 w-full max-w-md border-[#2a231b] bg-[#14110e]/95 shadow-2xl shadow-black/60 backdrop-blur-md">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#0b0f19] text-white">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-[#d49b4b]/35 bg-[#2a1d0e]/75 text-[#f4ba4a]">
             <Cpu className="h-5 w-5" />
           </div>
-          <CardTitle className="text-xl">Sign in to QuantumHost</CardTitle>
+          <CardTitle className="text-xl font-medium text-[#f7f3ec]">Sign in to QuantumHost</CardTitle>
           <CardDescription>
             Deploy Beyond Limits — access your cloud projects and isolated build pipelines.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error ? (
-            <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+            <div className="flex items-start gap-2 rounded-xl border border-rose-500/35 bg-rose-500/12 p-3 text-xs text-rose-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -119,11 +121,11 @@ function LoginForm() {
           </Button>
 
           <div className="relative flex items-center py-1">
-            <div className="grow border-t border-slate-200" />
-            <span className="mx-3 text-[11px] uppercase tracking-wider text-slate-400">
+            <div className="grow border-t border-[#26201a]" />
+            <span className="mx-3 text-[11px] uppercase tracking-wider text-[#7c7369]">
               or email
             </span>
-            <div className="grow border-t border-slate-200" />
+            <div className="grow border-t border-[#26201a]" />
           </div>
 
           <form onSubmit={handleEmailLogin} className="space-y-3.5">
@@ -157,9 +159,9 @@ function LoginForm() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-[#525b6c]">
+          <p className="text-center text-xs text-[#9a9084]">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-medium text-[#1d5bff] hover:underline">
+            <Link href="/register" className="font-medium text-[#f4ba4a] hover:underline">
               Create one
             </Link>
           </p>
@@ -173,8 +175,8 @@ export default function LoginPage() {
   return (
     <React.Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#f8f9fb]">
-          <Loader2 className="h-6 w-6 animate-spin text-[#1d5bff]" />
+        <div className="flex min-h-screen items-center justify-center bg-[#0b0907]">
+          <Loader2 className="h-6 w-6 animate-spin text-[#f4ba4a]" />
         </div>
       }
     >
