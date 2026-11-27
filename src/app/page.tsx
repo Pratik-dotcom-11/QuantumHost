@@ -51,7 +51,7 @@ export default async function LandingPage() {
             Your Next Build Starts Here · Deploy Beyond Limits
           </div>
 
-          <h1 className="font-display mt-6 max-w-3xl text-[36px] font-medium leading-[1.08] tracking-[-0.025em] text-white sm:text-[54px]">
+          <h1 className="font-display mt-6 max-w-3xl text-[38px] font-semibold leading-[1.06] tracking-[-0.01em] text-white sm:text-[58px]">
             Turn The Code In Your Repo
             <br />
             Into Production You Can Scale.

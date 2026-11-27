@@ -50,9 +50,14 @@ export function AppShell({ userEmail, userName, children }: AppShellProps) {
       <div className="flex h-16 items-center border-b border-[#221c16] px-5">
         <Link
           href="/dashboard"
-          className="font-display text-xs font-semibold uppercase tracking-[0.24em] text-[#f7f3ec] transition-opacity hover:opacity-85"
+          className="flex flex-col leading-none transition-opacity hover:opacity-90"
         >
-          QuantumHost
+          <span className="font-display text-lg font-semibold tracking-normal text-[#f7f3ec]">
+            QuantumHost
+          </span>
+          <span className="font-sans text-[8px] font-light uppercase tracking-[0.28em] text-[#d49b4b]">
+            Deploy Beyond Limits
+          </span>
         </Link>
       </div>
 

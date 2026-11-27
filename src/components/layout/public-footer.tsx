@@ -7,11 +7,13 @@ export function PublicFooter() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="grid gap-10 pb-14 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-4 lg:col-span-2">
-            <Link
-              href="/"
-              className="inline-block font-display text-xs font-semibold uppercase tracking-[0.24em] text-[#f7f3ec]"
-            >
-              QuantumHost
+            <Link href="/" className="inline-flex flex-col leading-none">
+              <span className="font-display text-xl font-semibold tracking-normal text-[#f7f3ec]">
+                QuantumHost
+              </span>
+              <span className="mt-1 font-sans text-[9px] font-light uppercase tracking-[0.28em] text-[#d49b4b]">
+                Deploy Beyond Limits
+              </span>
             </Link>
             <p className="max-w-xs text-xs leading-relaxed text-[#8e857b]">
               Deploy Beyond Limits. Isolated build workers, immutable R2 storage, custom DNS

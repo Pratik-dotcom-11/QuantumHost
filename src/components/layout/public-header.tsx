@@ -43,9 +43,14 @@ export function PublicHeader({
       >
         <Link
           href="/"
-          className="font-display text-[11px] font-semibold uppercase tracking-[0.24em] text-[#f7f3ec] transition-opacity hover:opacity-85"
+          className="group flex flex-col leading-none transition-opacity hover:opacity-90"
         >
-          QuantumHost
+          <span className="font-display text-lg font-semibold tracking-normal text-[#f7f3ec]">
+            QuantumHost
+          </span>
+          <span className="font-sans text-[8px] font-light uppercase tracking-[0.28em] text-[#d49b4b]">
+            Deploy Beyond Limits
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex" aria-label="Primary navigation">

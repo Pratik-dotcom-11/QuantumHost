@@ -100,7 +100,7 @@ export function WorkbenchShowcase({ isAuthenticated }: { isAuthenticated: boolea
         {/* Top Window Chrome */}
         <div className="flex items-center justify-between border-b border-[#221c16] bg-[#16120e] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2 text-xs">
-            <span className="font-display text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f7f3ec]">
+            <span className="font-display text-sm font-semibold tracking-normal text-[#f7f3ec]">
               QuantumHost
             </span>
             <span className="text-[#5e564d]">/</span>

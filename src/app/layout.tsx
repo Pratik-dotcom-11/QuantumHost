@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import "@fontsource-variable/plus-jakarta-sans";
-import "@fontsource-variable/inter";
+import "@fontsource-variable/el-messiri";
+import "@fontsource-variable/outfit";
 import "@fontsource-variable/jetbrains-mono";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";

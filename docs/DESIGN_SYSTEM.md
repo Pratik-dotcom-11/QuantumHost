@@ -1,13 +1,12 @@
-# QuantumHost — Obsidian & Solar-Amber Design System
+# QuantumHost — Obsidian, Solar-Amber & Sculpted Editorial Typography
 
 ## 1. Typography System (Self-Hosted Variable Fonts)
 
-| Role | Font Family | Package | Tracking & Sizing |
+| Role | Font Family | Package | Usage & Character |
 | --- | --- | --- | --- |
-| **Display & Headings** | `Plus Jakarta Sans Variable` | `@fontsource-variable/plus-jakarta-sans` | `-0.025em` tracking, weights `500–600`, `text-wrap: balance` |
-| **UI & Body Copy** | `Inter Variable` | `@fontsource-variable/inter` | `cv02/cv03/cv04/cv11` alternates, `13px–15px` |
-| **Brand Wordmark & Eyebrows** | `Plus Jakarta Sans Variable` | — | Uppercase, `0.22em–0.24em` letter-spacing |
-| **Code, Metrics & Logs** | `JetBrains Mono Variable` | `@fontsource-variable/jetbrains-mono` | `tabular-nums`, log terminal and artifact paths |
+| **Display, Headings & Brand** | `El Messiri Variable` | `@fontsource-variable/el-messiri` | Sculpted flared editorial serif (`400–700`, `-0.012em` tracking) across brand lockup, hero display, section headings, and card titles |
+| **UI, Body & Spaced Taglines** | `Outfit Variable` | `@fontsource-variable/outfit` | Clean geometric sans (`100–900`) paired with wide-tracked light uppercase (`0.26em–0.28em`) for brand sublines and micro-eyebrows |
+| **Code, Metrics & Logs** | `JetBrains Mono Variable` | `@fontsource-variable/jetbrains-mono` | `tabular-nums`, log terminal streaming, deployment hashes, and artifact paths |
 
 ## 2. Reference-Matched Color Palette
 
