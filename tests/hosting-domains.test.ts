@@ -499,63 +499,68 @@ describe("Phase 6 Hosting, Routing, Rollback & Domain Verification", () => {
     process.env.ARTIFACT_STORAGE_PROVIDER = "local";
     process.env.LOCAL_STORAGE_DIR = storageRoot;
 
+    const projId = "11111111-1111-4111-8111-111111111110";
+    const depV1Id = "22222222-2222-4222-8222-222222222221";
+    const depV2Id = "22222222-2222-4222-8222-222222222222";
+    const depFailedId = "22222222-2222-4222-8222-222222222223";
+
     // Upload v1 release
     await fs.writeFile(path.join(v1Out, "index.html"), "<h1>Release v1</h1>", "utf8");
     await fs.mkdir(path.join(v1Out, "assets"), { recursive: true });
     await fs.writeFile(path.join(v1Out, "assets", "main.js"), "console.log('v1');", "utf8");
-    const v1Artifact = await uploadArtifactDirectory("proj-1", "dep-v1", v1Out);
+    const v1Artifact = await uploadArtifactDirectory(projId, depV1Id, v1Out);
 
     // Upload v2 release
     await fs.writeFile(path.join(v2Out, "index.html"), "<h1>Release v2</h1>", "utf8");
-    const v2Artifact = await uploadArtifactDirectory("proj-1", "dep-v2", v2Out);
+    const v2Artifact = await uploadArtifactDirectory(projId, depV2Id, v2Out);
 
-    mockState.projects.set("proj-1", {
-      id: "proj-1",
+    mockState.projects.set(projId, {
+      id: projId,
       user_id: "user-1",
       slug: "my-site",
-      active_deployment_id: "dep-v2",
+      active_deployment_id: depV2Id,
     });
 
-    mockState.deployments.set("dep-v1", {
-      id: "dep-v1",
-      project_id: "proj-1",
+    mockState.deployments.set(depV1Id, {
+      id: depV1Id,
+      project_id: projId,
       user_id: "user-1",
       deployment_number: 1,
       status: "ready",
       hosting_provider: "quantumhost-edge",
       artifact_storage_provider: v1Artifact.provider,
       artifact_key: v1Artifact.artifactKey,
-      preview_url: "https://quantumhost.app/d/dep-v1",
+      preview_url: `https://quantumhost.app/d/${depV1Id}`,
     });
 
-    mockState.deployments.set("dep-v2", {
-      id: "dep-v2",
-      project_id: "proj-1",
+    mockState.deployments.set(depV2Id, {
+      id: depV2Id,
+      project_id: projId,
       user_id: "user-1",
       deployment_number: 2,
       status: "ready",
       hosting_provider: "quantumhost-edge",
       artifact_storage_provider: v2Artifact.provider,
       artifact_key: v2Artifact.artifactKey,
-      preview_url: "https://quantumhost.app/d/dep-v2",
+      preview_url: `https://quantumhost.app/d/${depV2Id}`,
     });
 
-    mockState.deployments.set("dep-failed", {
-      id: "dep-failed",
-      project_id: "proj-1",
+    mockState.deployments.set(depFailedId, {
+      id: depFailedId,
+      project_id: projId,
       user_id: "user-1",
       deployment_number: 3,
       status: "failed",
       hosting_provider: "quantumhost-edge",
       artifact_storage_provider: null,
       artifact_key: null,
-      preview_url: "https://quantumhost.app/d/dep-failed",
+      preview_url: `https://quantumhost.app/d/${depFailedId}`,
     });
 
     mockState.publishedRoute = {
-      project_id: "proj-1",
+      project_id: projId,
       slug: "my-site",
-      active_deployment_id: "dep-v2",
+      active_deployment_id: depV2Id,
       artifact_storage_provider: v2Artifact.provider,
       artifact_key: v2Artifact.artifactKey,
     };
@@ -566,35 +571,35 @@ describe("Phase 6 Hosting, Routing, Rollback & Domain Verification", () => {
     });
     expect(liveV2.status).toBe(200);
     expect(await liveV2.text()).toContain("Release v2");
-    expect(liveV2.headers.get("X-QuantumHost-Deployment")).toBe("dep-v2");
+    expect(liveV2.headers.get("X-QuantumHost-Deployment")).toBe(depV2Id);
 
     // 2. Preview route serves immutable v1 asset and rejects failed deployments
     const previewJs = await servePreviewGet(
-      new Request("https://quantumhost.app/d/dep-v1/assets/main.js"),
-      { params: Promise.resolve({ deploymentId: "dep-v1", path: ["assets", "main.js"] }) }
+      new Request(`https://quantumhost.app/d/${depV1Id}/assets/main.js`),
+      { params: Promise.resolve({ deploymentId: depV1Id, path: ["assets", "main.js"] }) }
     );
     expect(previewJs.status).toBe(200);
     expect(previewJs.headers.get("Content-Type")).toContain("javascript");
     expect(await previewJs.text()).toContain("console.log('v1')");
 
     const failedPreview = await servePreviewGet(
-      new Request("https://quantumhost.app/d/dep-failed"),
-      { params: Promise.resolve({ deploymentId: "dep-failed", path: [] }) }
+      new Request(`https://quantumhost.app/d/${depFailedId}`),
+      { params: Promise.resolve({ deploymentId: depFailedId, path: [] }) }
     );
     expect(failedPreview.status).toBe(404);
 
     // 3. Rollback API refuses failed deployments and keeps active v2 intact
     const failedRollback = await rollbackPost(
-      new Request("https://quantumhost.app/api/deployments/dep-failed/rollback", { method: "POST" }),
-      { params: Promise.resolve({ id: "dep-failed" }) }
+      new Request(`https://quantumhost.app/api/deployments/${depFailedId}/rollback`, { method: "POST" }),
+      { params: Promise.resolve({ id: depFailedId }) }
     );
     expect(failedRollback.status).toBe(400);
-    expect(mockState.projects.get("proj-1")?.active_deployment_id).toBe("dep-v2");
+    expect(mockState.projects.get(projId)?.active_deployment_id).toBe(depV2Id);
 
     // 4. Rollback API promotes v1 cleanly and live site immediately serves v1 + JS asset
     const rollbackOk = await rollbackPost(
-      new Request("https://quantumhost.app/api/deployments/dep-v1/rollback", { method: "POST" }),
-      { params: Promise.resolve({ id: "dep-v1" }) }
+      new Request(`https://quantumhost.app/api/deployments/${depV1Id}/rollback`, { method: "POST" }),
+      { params: Promise.resolve({ id: depV1Id }) }
     );
     expect(rollbackOk.status).toBe(200);
     const rollbackBody = (await rollbackOk.json()) as {
@@ -602,14 +607,14 @@ describe("Phase 6 Hosting, Routing, Rollback & Domain Verification", () => {
       activeDeploymentId: string;
     };
     expect(rollbackBody.rolledBack).toBe(true);
-    expect(rollbackBody.activeDeploymentId).toBe("dep-v1");
+    expect(rollbackBody.activeDeploymentId).toBe(depV1Id);
 
     const liveAfterRollback = await serveSiteGet(new Request("https://quantumhost.app/sites/my-site"), {
       params: Promise.resolve({ slug: "my-site", path: [] }),
     });
     expect(liveAfterRollback.status).toBe(200);
     expect(await liveAfterRollback.text()).toContain("Release v1");
-    expect(liveAfterRollback.headers.get("X-QuantumHost-Deployment")).toBe("dep-v1");
+    expect(liveAfterRollback.headers.get("X-QuantumHost-Deployment")).toBe(depV1Id);
 
     // 5. Missing slug returns 404 safely
     const missingSite = await serveSiteGet(new Request("https://quantumhost.app/sites/nonexistent"), {

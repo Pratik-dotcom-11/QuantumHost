@@ -58,13 +58,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "GitHub connection not found" }, { status: 404 });
     }
 
-    token = await resolveConnectionToken(connection, async (encryptedToken, expiresAt) => {
-      await supabase
-        .from("github_connections")
-        .update({ encrypted_access_token: encryptedToken, token_expires_at: expiresAt })
-        .eq("id", connection.id)
-        .eq("user_id", user.id);
-    });
+    try {
+      token = await resolveConnectionToken(connection, async (encryptedToken, expiresAt) => {
+        await supabase
+          .from("github_connections")
+          .update({ encrypted_access_token: encryptedToken, token_expires_at: expiresAt })
+          .eq("id", connection.id)
+          .eq("user_id", user.id);
+      });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Failed to decrypt or refresh GitHub token" },
+        { status: 502 }
+      );
+    }
   }
 
   try {

@@ -43,36 +43,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const results = [];
-  for (const monitor of monitors ?? []) {
-    const probe = await runHttpProbe(monitor.target_url);
-    const now = new Date().toISOString();
+  const results = await Promise.all(
+    (monitors ?? []).map(async (monitor) => {
+      const probe = await runHttpProbe(monitor.target_url);
+      const now = new Date().toISOString();
 
-    await Promise.all([
-      supabase.from("uptime_checks").insert({
-        monitor_id: monitor.id,
-        project_id: monitor.project_id,
-        user_id: user.id,
-        status: probe.status,
-        http_status: probe.httpStatus,
-        latency_ms: probe.latencyMs,
-        error_message: probe.errorMessage,
-        checked_at: now,
-      }),
-      supabase
-        .from("uptime_monitors")
-        .update({
-          last_status: probe.status,
-          last_http_status: probe.httpStatus,
-          last_latency_ms: probe.latencyMs,
-          last_checked_at: now,
-        })
-        .eq("id", monitor.id)
-        .eq("user_id", user.id),
-    ]);
+      await Promise.all([
+        supabase.from("uptime_checks").insert({
+          monitor_id: monitor.id,
+          project_id: monitor.project_id,
+          user_id: user.id,
+          status: probe.status,
+          http_status: probe.httpStatus,
+          latency_ms: probe.latencyMs,
+          error_message: probe.errorMessage,
+          checked_at: now,
+        }),
+        supabase
+          .from("uptime_monitors")
+          .update({
+            last_status: probe.status,
+            last_http_status: probe.httpStatus,
+            last_latency_ms: probe.latencyMs,
+            last_checked_at: now,
+          })
+          .eq("id", monitor.id)
+          .eq("user_id", user.id),
+      ]);
 
-    results.push({ monitorId: monitor.id, targetUrl: monitor.target_url, ...probe });
-  }
+      return { monitorId: monitor.id, targetUrl: monitor.target_url, ...probe };
+    })
+  );
 
   return NextResponse.json({ results });
 }

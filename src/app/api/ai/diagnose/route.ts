@@ -60,7 +60,11 @@ export async function POST(request: Request) {
 
   let apiKey = process.env.AI_API_KEY?.trim() || "";
   if (aiConfig?.encrypted_api_key) {
-    apiKey = decryptSecret(aiConfig.encrypted_api_key);
+    try {
+      apiKey = decryptSecret(aiConfig.encrypted_api_key);
+    } catch {
+      apiKey = "";
+    }
   }
 
   if (!apiKey) {

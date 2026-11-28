@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import IORedis from "ioredis";
 import { createPublicServerClient } from "@/lib/supabase/admin";
-import { getRedisUrl, getServerSupabaseServiceKey } from "@/lib/env";
+import { getRedisUrl, getServerSupabaseServiceKey, isEncryptionKeyConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +87,14 @@ export async function GET() {
         ai: {
           provider: aiProvider,
           defaultKeyConfigured: aiConfigured,
+        },
+        encryption: {
+          configured: isEncryptionKeyConfigured(),
+        },
+        githubOAuth: {
+          directCredentialsConfigured: Boolean(
+            process.env.GITHUB_CLIENT_ID?.trim() && process.env.GITHUB_CLIENT_SECRET?.trim()
+          ),
         },
       },
     },

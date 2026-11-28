@@ -2,9 +2,9 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 
-export async function GET() {
+export async function GET(request: Request) {
   const { user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -29,7 +29,7 @@ export async function GET() {
     path: "/",
   });
 
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   const redirectUri = `${appUrl}/api/github/oauth/callback`;
   const params = new URLSearchParams({
     client_id: clientId,

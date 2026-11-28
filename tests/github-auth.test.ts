@@ -6,6 +6,8 @@ import {
   getSupabaseCallbackUrl,
   probeSupabaseGitHubProvider,
 } from "../src/lib/auth/github-provider";
+import { getPublicEnv, resolveRequestAppUrl } from "../src/lib/env";
+import { isValidUuid } from "../src/lib/security/validation";
 
 describe("GitHub Authentication Provider Resolution", () => {
   const originalEnv = { ...process.env };
@@ -111,5 +113,24 @@ describe("GitHub Authentication Provider Resolution", () => {
     expect(readyStatus.configured).toBe(true);
     expect(readyStatus.mode).toBe("direct");
     expect(readyStatus.directConfigured).toBe(true);
+  });
+
+  it("resolves Vercel production origin dynamically and validates UUIDs", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "quantumhost.vercel.app";
+    expect(getPublicEnv().appUrl).toBe("https://quantumhost.vercel.app");
+
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    const req = new Request("http://localhost:3000/api/projects", {
+      headers: {
+        "x-forwarded-host": "quantumhost-preview.vercel.app",
+        "x-forwarded-proto": "https",
+      },
+    });
+    expect(resolveRequestAppUrl(req)).toBe("https://quantumhost-preview.vercel.app");
+
+    expect(isValidUuid("11111111-1111-4111-8111-111111111111")).toBe(true);
+    expect(isValidUuid("not-a-uuid")).toBe(false);
+    expect(isValidUuid("")).toBe(false);
   });
 });

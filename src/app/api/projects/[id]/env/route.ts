@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { decryptSecret, encryptSecret, maskSecret } from "@/lib/crypto";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 
 const upsertEnvSchema = z.object({
   key: z
@@ -18,6 +19,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -69,6 +71,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -98,7 +101,15 @@ export async function POST(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const encryptedValue = encryptSecret(parsed.data.value);
+  let encryptedValue: string;
+  try {
+    encryptedValue = encryptSecret(parsed.data.value);
+  } catch (encErr) {
+    return NextResponse.json(
+      { error: encErr instanceof Error ? encErr.message : "Server encryption key is not configured." },
+      { status: 503 }
+    );
+  }
   const { data, error } = await supabase
     .from("project_env_vars")
     .upsert(
@@ -127,6 +138,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -135,6 +147,7 @@ export async function DELETE(
   if (!varId) {
     return NextResponse.json({ error: "varId is required" }, { status: 400 });
   }
+  if (!isValidUuid(varId)) return invalidUuidResponse("environment variable");
 
   const { error } = await supabase
     .from("project_env_vars")

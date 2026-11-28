@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { encryptSecret } from "@/lib/crypto";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 import {
   getRepositoryMetadata,
   isValidRepoFullName,
@@ -128,7 +128,12 @@ export async function POST(request: Request) {
   }
 
   const rawWebhookSecret = randomBytes(24).toString("hex");
-  const encryptedWebhookSecret = encryptSecret(rawWebhookSecret);
+  let encryptedWebhookSecret: string | null = null;
+  try {
+    encryptedWebhookSecret = encryptSecret(rawWebhookSecret);
+  } catch {
+    encryptedWebhookSecret = null;
+  }
 
   const { data: project, error: insertError } = await supabase
     .from("projects")
@@ -168,7 +173,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   // Create default uptime monitor targeting the project's live route
   await supabase.from("uptime_monitors").insert({
     project_id: project.id,
@@ -180,7 +185,13 @@ export async function POST(request: Request) {
 
   let webhookStatus: { registered: boolean; warning?: string } = { registered: false };
   if (input.registerWebhook && input.githubConnectionId && input.repoFullName) {
-    try {
+    if (!encryptedWebhookSecret) {
+      webhookStatus = {
+        registered: false,
+        warning: "ENCRYPTION_MASTER_KEY is not configured; automatic GitHub webhook registration was skipped.",
+      };
+    } else {
+      try {
       const { data: conn } = await supabase
         .from("github_connections")
         .select("provider_type, installation_id, encrypted_access_token")
@@ -208,6 +219,7 @@ export async function POST(request: Request) {
         registered: false,
         warning: err instanceof Error ? err.message : "Webhook registration failed",
       };
+    }
     }
   }
 

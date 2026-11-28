@@ -27,6 +27,7 @@ export function GithubAuthButton({
   const [oauthLoading, setOauthLoading] = useState(false);
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [githubStatus, setGithubStatus] = useState<GitHubAuthStatus | null>(null);
+  const [retryFeedback, setRetryFeedback] = useState<string | null>(null);
 
   function setBusy(busy: boolean) {
     setOauthLoading(busy);
@@ -48,6 +49,9 @@ export function GithubAuthButton({
 
   async function startGitHubFlow(forceFresh = false) {
     onError?.(null);
+    if (forceFresh) {
+      setRetryFeedback(null);
+    }
     setBusy(true);
     try {
       const checkRes = await fetch(`/api/auth/github/check${forceFresh ? "?fresh=1" : ""}`, {
@@ -60,6 +64,11 @@ export function GithubAuthButton({
 
         if (!status.configured) {
           setBusy(false);
+          if (forceFresh) {
+            setRetryFeedback(
+              `Checked at ${new Date().toLocaleTimeString()}: GitHub OAuth is still disabled in Supabase. Save Client ID & Secret in Supabase Dashboard first.`
+            );
+          }
           setSetupModalOpen(true);
           return;
         }
@@ -104,9 +113,13 @@ export function GithubAuthButton({
       <GithubAuthSetupModal
         open={setupModalOpen}
         status={githubStatus}
-        onClose={() => setSetupModalOpen(false)}
+        onClose={() => {
+          setSetupModalOpen(false);
+          setRetryFeedback(null);
+        }}
         onRetry={() => startGitHubFlow(true)}
         retrying={oauthLoading}
+        retryFeedback={retryFeedback}
       />
 
       <Button

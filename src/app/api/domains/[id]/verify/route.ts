@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 import { verifyDomainAndSsl } from "@/lib/hosting/domains";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("domain");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -26,7 +28,7 @@ export async function POST(
     return NextResponse.json({ error: "Domain not found" }, { status: 404 });
   }
 
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   const outcome = await verifyDomainAndSsl({
     domain: domainRow.domain,
     verificationToken: domainRow.verification_token,

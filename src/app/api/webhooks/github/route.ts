@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { decryptSecret } from "@/lib/crypto";
 import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
-import { getPublicEnv, getServerSupabaseServiceKey } from "@/lib/env";
+import { getServerSupabaseServiceKey, resolveRequestAppUrl } from "@/lib/env";
 import { verifyGitHubWebhookSignature } from "@/lib/github/client";
 import { evaluateGitHubWebhookEvent } from "@/lib/github/webhook";
 import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   const triggered: string[] = [];
 
   for (const project of verifiedProjects) {

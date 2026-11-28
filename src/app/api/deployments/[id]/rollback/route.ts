@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 import { readArtifactAsset } from "@/lib/storage/artifacts";
 import type { StorageProviderType } from "@/types/database";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("deployment");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -75,7 +77,7 @@ export async function POST(
     );
   }
 
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   const urls = buildDeploymentHostingUrls({
     appUrl,
     slug: updatedProject.slug,

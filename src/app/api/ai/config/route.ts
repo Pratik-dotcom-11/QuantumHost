@@ -91,9 +91,17 @@ export async function PUT(request: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const encryptedApiKey = parsed.data.apiKey?.trim()
-    ? encryptSecret(parsed.data.apiKey.trim())
-    : existing?.encrypted_api_key ?? null;
+  let encryptedApiKey = existing?.encrypted_api_key ?? null;
+  if (parsed.data.apiKey?.trim()) {
+    try {
+      encryptedApiKey = encryptSecret(parsed.data.apiKey.trim());
+    } catch (encErr) {
+      return NextResponse.json(
+        { error: encErr instanceof Error ? encErr.message : "Server encryption key is not configured." },
+        { status: 503 }
+      );
+    }
+  }
 
   const { data, error } = await supabase
     .from("ai_configurations")

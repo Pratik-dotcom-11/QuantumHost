@@ -54,35 +54,36 @@ export async function GET(request: Request) {
     return elapsedSec >= Math.max(60, m.interval_seconds - 5);
   });
 
-  const checked = [];
-  for (const monitor of dueMonitors) {
-    const probe = await runHttpProbe(monitor.target_url);
-    const nowIso = new Date().toISOString();
+  const checked = await Promise.all(
+    dueMonitors.map(async (monitor) => {
+      const probe = await runHttpProbe(monitor.target_url);
+      const nowIso = new Date().toISOString();
 
-    await Promise.all([
-      admin.from("uptime_checks").insert({
-        monitor_id: monitor.id,
-        project_id: monitor.project_id,
-        user_id: monitor.user_id,
-        status: probe.status,
-        http_status: probe.httpStatus,
-        latency_ms: probe.latencyMs,
-        error_message: probe.errorMessage,
-        checked_at: nowIso,
-      }),
-      admin
-        .from("uptime_monitors")
-        .update({
-          last_status: probe.status,
-          last_http_status: probe.httpStatus,
-          last_latency_ms: probe.latencyMs,
-          last_checked_at: nowIso,
-        })
-        .eq("id", monitor.id),
-    ]);
+      await Promise.all([
+        admin.from("uptime_checks").insert({
+          monitor_id: monitor.id,
+          project_id: monitor.project_id,
+          user_id: monitor.user_id,
+          status: probe.status,
+          http_status: probe.httpStatus,
+          latency_ms: probe.latencyMs,
+          error_message: probe.errorMessage,
+          checked_at: nowIso,
+        }),
+        admin
+          .from("uptime_monitors")
+          .update({
+            last_status: probe.status,
+            last_http_status: probe.httpStatus,
+            last_latency_ms: probe.latencyMs,
+            last_checked_at: nowIso,
+          })
+          .eq("id", monitor.id),
+      ]);
 
-    checked.push({ monitorId: monitor.id, status: probe.status, latencyMs: probe.latencyMs });
-  }
+      return { monitorId: monitor.id, status: probe.status, latencyMs: probe.latencyMs };
+    })
+  );
 
   return NextResponse.json({
     ok: true,

@@ -10,8 +10,21 @@ export interface HttpProbeOutcome {
 
 function isSameOriginAsControlPlane(targetUrl: string): boolean {
   try {
-    const appOrigin = new URL(getPublicEnv().appUrl).origin;
-    return new URL(targetUrl).origin === appOrigin;
+    const targetOrigin = new URL(targetUrl).origin;
+    const candidates = [getPublicEnv().appUrl];
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      candidates.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.trim()}`);
+    }
+    if (process.env.VERCEL_URL) {
+      candidates.push(`https://${process.env.VERCEL_URL.trim()}`);
+    }
+    return candidates.some((candidate) => {
+      try {
+        return new URL(candidate).origin === targetOrigin;
+      } catch {
+        return false;
+      }
+    });
   } catch {
     return false;
   }

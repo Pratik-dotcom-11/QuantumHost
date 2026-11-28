@@ -3,12 +3,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { encryptSecret } from "@/lib/crypto";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 import { verifyGitHubToken } from "@/lib/github/client";
 
 export async function GET(request: Request) {
   const { supabase, user } = await requireApiUser();
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   const { searchParams } = new URL(request.url);
 
   if (!user) {
@@ -67,7 +67,12 @@ export async function GET(request: Request) {
     }
 
     const ghUser = await verifyGitHubToken(tokenData.access_token);
-    const encrypted = encryptSecret(tokenData.access_token);
+    let encrypted: string;
+    try {
+      encrypted = encryptSecret(tokenData.access_token);
+    } catch {
+      return NextResponse.redirect(`${appUrl}/settings?github_error=encryption_key_missing`);
+    }
     const parsedInstallation = installationId ? Number.parseInt(installationId, 10) : null;
 
     await supabase.from("github_connections").upsert(

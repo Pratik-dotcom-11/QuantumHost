@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 import type { Database } from "@/types/database";
 
 const updateProjectSchema = z.object({
@@ -21,6 +22,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -45,6 +47,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -100,6 +103,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 

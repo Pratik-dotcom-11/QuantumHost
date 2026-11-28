@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 import { getLatestCommit, resolveConnectionToken } from "@/lib/github/client";
 import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
 import { enqueueBuildJob } from "@/lib/queue/bullmq";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 
 const createDeploymentSchema = z.object({
   projectId: z.string().uuid(),
@@ -22,6 +23,9 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get("projectId");
+  if (projectId && !isValidUuid(projectId)) {
+    return invalidUuidResponse("project");
+  }
 
   let query = supabase
     .from("deployments")
@@ -138,7 +142,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
   const hostingUrls = buildDeploymentHostingUrls({
     appUrl,
     slug: project.slug,

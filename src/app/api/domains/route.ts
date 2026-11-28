@@ -2,9 +2,10 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
-import { getPublicEnv } from "@/lib/env";
+import { resolveRequestAppUrl } from "@/lib/env";
 import { registerDomainWithProvider, removeDomainFromProvider } from "@/lib/hosting/domains";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 
 const createDomainSchema = z.object({
   projectId: z.string().uuid(),
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   const verificationToken = `qh-verify=${randomBytes(16).toString("hex")}`;
-  const { appUrl } = getPublicEnv();
+  const appUrl = resolveRequestAppUrl(request);
 
   const registration = await registerDomainWithProvider({
     domain: parsed.data.domain,
@@ -124,6 +125,7 @@ export async function DELETE(request: Request) {
   if (!id) {
     return NextResponse.json({ error: "Domain id is required" }, { status: 400 });
   }
+  if (!isValidUuid(id)) return invalidUuidResponse("domain");
 
   const { data: existing } = await supabase
     .from("custom_domains")

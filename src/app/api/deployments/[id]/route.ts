@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { isActiveDeploymentStatus } from "@/lib/deployments/lifecycle";
 import { cancelQueuedJob } from "@/lib/queue/bullmq";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("deployment");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 
@@ -46,6 +48,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("deployment");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 

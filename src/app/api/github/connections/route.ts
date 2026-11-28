@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { encryptSecret } from "@/lib/crypto";
 import { getInstallationAccessToken, verifyGitHubToken } from "@/lib/github/client";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 
 const connectSchema = z.discriminatedUnion("providerType", [
   z.object({
@@ -60,7 +61,15 @@ export async function POST(request: Request) {
   try {
     if (parsed.data.providerType === "pat") {
       const ghUser = await verifyGitHubToken(parsed.data.accessToken.trim());
-      const encrypted = encryptSecret(parsed.data.accessToken.trim());
+      let encrypted: string;
+      try {
+        encrypted = encryptSecret(parsed.data.accessToken.trim());
+      } catch (encErr) {
+        return NextResponse.json(
+          { error: encErr instanceof Error ? encErr.message : "Server encryption key is not configured." },
+          { status: 503 }
+        );
+      }
 
       const { data, error } = await supabase
         .from("github_connections")
@@ -123,6 +132,7 @@ export async function DELETE(request: Request) {
   if (!id) {
     return NextResponse.json({ error: "Connection id is required" }, { status: 400 });
   }
+  if (!isValidUuid(id)) return invalidUuidResponse("connection");
 
   const { error } = await supabase
     .from("github_connections")

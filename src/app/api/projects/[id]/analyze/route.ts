@@ -6,6 +6,7 @@ import {
 } from "@/lib/github/client";
 import { analyzeDeployReadiness } from "@/lib/intelligence/deploy-analyzer";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
+import { invalidUuidResponse, isValidUuid } from "@/lib/security/validation";
 import type { FrameworkType } from "@/types/database";
 
 export async function POST(
@@ -13,6 +14,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  if (!isValidUuid(id)) return invalidUuidResponse("project");
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
 

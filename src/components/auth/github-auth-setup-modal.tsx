@@ -21,6 +21,7 @@ interface GithubAuthSetupModalProps {
   onClose: () => void;
   onRetry: () => Promise<void>;
   retrying?: boolean;
+  retryFeedback?: string | null;
 }
 
 export function GithubAuthSetupModal({
@@ -29,6 +30,7 @@ export function GithubAuthSetupModal({
   onClose,
   onRetry,
   retrying = false,
+  retryFeedback = null,
 }: GithubAuthSetupModalProps) {
   const [copiedField, setCopiedField] = useState<"supabase" | "direct" | null>(null);
 
@@ -69,66 +71,73 @@ export function GithubAuthSetupModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="github-setup-title"
     >
-      <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[#2a231b] bg-[#14110e] p-6 text-[#f7f3ec] shadow-2xl shadow-black/80">
+      <div className="relative my-auto max-h-[92dvh] w-full max-w-xl overflow-x-hidden overflow-y-auto rounded-2xl border border-[#2a231b] bg-[#14110e] p-4 text-[#f7f3ec] shadow-2xl shadow-black/80 sm:p-6">
         <button
           type="button"
           onClick={onClose}
           aria-label="Close setup dialog"
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-[#9a9084] transition-colors hover:bg-[#211c16] hover:text-[#f7f3ec] cursor-pointer"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-[#9a9084] transition-colors hover:bg-[#211c16] hover:text-[#f7f3ec] cursor-pointer sm:right-4 sm:top-4"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="flex items-start gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#f4ba4a]/35 bg-[#f4ba4a]/12 text-[#f4ba4a]">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#f4ba4a]/35 bg-[#f4ba4a]/12 text-[#f4ba4a] sm:h-11 sm:w-11">
             <Github className="h-5 w-5" />
           </div>
-          <div className="space-y-1 pr-6">
-            <h2 id="github-setup-title" className="text-lg font-medium text-[#f7f3ec]">
+          <div className="min-w-0 flex-1 space-y-1 pr-7">
+            <h2 id="github-setup-title" className="text-base font-medium text-[#f7f3ec] sm:text-lg">
               Enable GitHub OAuth Provider
             </h2>
             <p className="text-xs leading-relaxed text-[#9a9084]">
-              QuantumHost intercepted a Supabase Auth configuration error before redirecting you to a
-              broken error page.
+              GitHub OAuth credentials are not configured yet on Supabase or this server, so
+              QuantumHost paused before redirecting to a raw HTTP 400 error.
             </p>
           </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+        <div className="mt-4 flex min-w-0 items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4ba4a]" />
-          <div className="space-y-1">
-            <p className="font-medium text-amber-100">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-medium break-words text-amber-100">
               {status?.message ||
                 "Supabase returned: Unsupported provider: provider is not enabled."}
             </p>
             <p className="text-[11px] text-amber-200/80">
-              Project ID: <code className="rounded bg-black/40 px-1.5 py-0.5">{projectId}</code>
+              Project ID:{" "}
+              <code className="break-all rounded bg-black/40 px-1.5 py-0.5">{projectId}</code>
             </p>
           </div>
         </div>
 
-        <div className="mt-5 space-y-4">
+        {retryFeedback ? (
+          <div className="mt-3 rounded-xl border border-rose-500/35 bg-rose-500/12 px-3 py-2 text-xs text-rose-200">
+            {retryFeedback}
+          </div>
+        ) : null}
+
+        <div className="mt-4 space-y-3.5 sm:mt-5 sm:space-y-4">
           {/* Option 1: Supabase Native OAuth */}
-          <div className="space-y-3 rounded-xl border border-[#2a231b] bg-[#0e0c0a] p-4">
-            <div className="flex items-center justify-between">
+          <div className="min-w-0 space-y-3 rounded-xl border border-[#2a231b] bg-[#0e0c0a] p-3.5 sm:p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#f4ba4a]">
                 Recommended: Enable in Supabase Auth
               </span>
-              <span className="rounded-full border border-[#2a231b] bg-[#1a1612] px-2 py-0.5 text-[10px] text-[#9a9084]">
+              <span className="shrink-0 rounded-full border border-[#2a231b] bg-[#1a1612] px-2 py-0.5 text-[10px] text-[#9a9084]">
                 2 minutes
               </span>
             </div>
 
             <ol className="space-y-2.5 text-xs text-[#d6cfc5]">
-              <li className="flex gap-2">
-                <span className="font-semibold text-[#f4ba4a]">1.</span>
-                <div className="space-y-1.5 flex-1">
-                  <span>
+              <li className="flex min-w-0 gap-2">
+                <span className="shrink-0 font-semibold text-[#f4ba4a]">1.</span>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <span className="block break-words">
                     Create a{" "}
                     <a
                       href={githubNewAppUrl}
@@ -137,12 +146,12 @@ export function GithubAuthSetupModal({
                       className="inline-flex items-center gap-1 font-medium text-[#f4ba4a] hover:underline"
                     >
                       GitHub OAuth App
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="h-3 w-3 shrink-0" />
                     </a>{" "}
                     and paste this exact Authorization callback URL:
                   </span>
-                  <div className="flex items-center gap-2 rounded-lg border border-[#2a231b] bg-[#14110e] px-2.5 py-1.5 font-mono text-[11px] text-[#f7f3ec]">
-                    <span className="truncate flex-1 select-all">{supabaseCallbackUrl}</span>
+                  <div className="flex min-w-0 items-center gap-2 rounded-lg border border-[#2a231b] bg-[#14110e] px-2.5 py-1.5 font-mono text-[11px] text-[#f7f3ec]">
+                    <span className="min-w-0 flex-1 truncate select-all">{supabaseCallbackUrl}</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(supabaseCallbackUrl, "supabase")}
@@ -164,10 +173,10 @@ export function GithubAuthSetupModal({
                 </div>
               </li>
 
-              <li className="flex gap-2">
-                <span className="font-semibold text-[#f4ba4a]">2.</span>
-                <div className="space-y-1 flex-1">
-                  <span>
+              <li className="flex min-w-0 gap-2">
+                <span className="shrink-0 font-semibold text-[#f4ba4a]">2.</span>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="block break-words">
                     Open{" "}
                     <a
                       href={supabaseDashboardUrl}
@@ -176,7 +185,7 @@ export function GithubAuthSetupModal({
                       className="inline-flex items-center gap-1 font-medium text-[#f4ba4a] hover:underline"
                     >
                       Supabase Authentication &rarr; Providers &rarr; GitHub
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="h-3 w-3 shrink-0" />
                     </a>
                     , toggle <strong>GitHub enabled</strong> ON, paste your Client ID &amp; Client
                     Secret, and click <strong>Save</strong>.
@@ -187,19 +196,19 @@ export function GithubAuthSetupModal({
           </div>
 
           {/* Option 2: Direct Server Bridge */}
-          <div className="space-y-2 rounded-xl border border-[#2a231b] bg-[#0e0c0a] p-4">
+          <div className="min-w-0 space-y-2 rounded-xl border border-[#2a231b] bg-[#0e0c0a] p-3.5 sm:p-4">
             <div className="flex items-center gap-2 text-xs font-medium text-[#d6cfc5]">
-              <KeyRound className="h-3.5 w-3.5 text-[#9a9084]" />
-              <span>Alternative: Direct Server OAuth Bridge (.env / Vercel)</span>
+              <KeyRound className="h-3.5 w-3.5 shrink-0 text-[#9a9084]" />
+              <span className="truncate">Alternative: Direct Server OAuth Bridge (.env / Vercel)</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-[#9a9084]">
+            <p className="text-[11px] leading-relaxed text-[#9a9084] break-words">
               Set <code className="text-[#d6cfc5]">GITHUB_CLIENT_ID</code>,{" "}
               <code className="text-[#d6cfc5]">GITHUB_CLIENT_SECRET</code>, and{" "}
               <code className="text-[#d6cfc5]">SUPABASE_SERVICE_ROLE_KEY</code> in your environment
               variables with callback URL:
             </p>
-            <div className="flex items-center gap-2 rounded-lg border border-[#2a231b] bg-[#14110e] px-2.5 py-1.5 font-mono text-[11px] text-[#d6cfc5]">
-              <span className="truncate flex-1 select-all">{directCallbackUrl}</span>
+            <div className="flex min-w-0 items-center gap-2 rounded-lg border border-[#2a231b] bg-[#14110e] px-2.5 py-1.5 font-mono text-[11px] text-[#d6cfc5]">
+              <span className="min-w-0 flex-1 truncate select-all">{directCallbackUrl}</span>
               <button
                 type="button"
                 onClick={() => handleCopy(directCallbackUrl, "direct")}
