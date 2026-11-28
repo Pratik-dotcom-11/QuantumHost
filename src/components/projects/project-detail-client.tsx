@@ -7,14 +7,17 @@ import {
   AlertCircle,
   ArrowUpRight,
   CheckCircle2,
+  Globe,
   KeyRound,
   Loader2,
   Rocket,
   RotateCcw,
   Save,
+  ShieldCheck,
   Trash2,
 } from "lucide-react";
 import { FRAMEWORK_PRESETS } from "@/lib/frameworks";
+import type { ProjectHostingUrls } from "@/lib/hosting/urls";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
 import type { FrameworkType } from "@/types/database";
 import { DeploymentStatusBadge } from "@/components/status-badge";
@@ -55,8 +58,19 @@ interface DeploymentRow {
   git_commit_message: string | null;
   artifact_size_bytes: number;
   build_duration_ms: number | null;
+  hosting_provider?: string;
   preview_url: string | null;
+  production_url?: string | null;
+  verified_at?: string | null;
   created_at: string;
+}
+
+interface ProjectDomainSummary {
+  id: string;
+  domain: string;
+  verification_status: string;
+  ssl_status: string;
+  https_verified: boolean;
 }
 
 interface EnvVarItem {
@@ -72,10 +86,14 @@ export function ProjectDetailClient({
   initialProject,
   initialDeployments,
   initialEnvVars,
+  initialDomains = [],
+  hostingUrls,
 }: {
   initialProject: ProjectRow;
   initialDeployments: DeploymentRow[];
   initialEnvVars: EnvVarItem[];
+  initialDomains?: ProjectDomainSummary[];
+  hostingUrls?: ProjectHostingUrls;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -324,6 +342,103 @@ export function ProjectDetailClient({
           <span>{feedback.text}</span>
         </div>
       ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Globe className="h-4 w-4 text-[#f4ba4a]" />
+              Production Hosting
+            </CardTitle>
+            <CardDescription>
+              {project.active_deployment_id
+                ? `Active production release synced across edge routing (${
+                    deployments.find((d) => d.id === project.active_deployment_id)?.hosting_provider ||
+                    "quantumhost-edge"
+                  }).`
+                : "Deploy or promote a verified build to publish your production URL."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+              <p className="text-[11px] uppercase tracking-wider text-[#9a9084]">Live URL</p>
+              <p className="mt-1 truncate font-mono text-xs text-[#f7f3ec]">
+                {hostingUrls?.productionUrl || `/sites/${project.slug}`}
+              </p>
+              <p className="mt-1 truncate font-mono text-[11px] text-[#9a9084]">
+                Edge alias: {hostingUrls?.canonicalDomainUrl || `https://${project.slug}.quantumhost.app`}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+              <p className="text-[11px] uppercase tracking-wider text-[#9a9084]">
+                Active Release
+              </p>
+              {(() => {
+                const activeDep = deployments.find((d) => d.id === project.active_deployment_id);
+                if (!activeDep) {
+                  return (
+                    <p className="mt-1 text-xs text-[#9a9084]">No active production deployment yet</p>
+                  );
+                }
+                return (
+                  <>
+                    <p className="mt-1 font-mono text-xs text-emerald-300">
+                      #{activeDep.deployment_number} · {activeDep.git_branch || project.default_branch}
+                    </p>
+                    <p className="mt-1 truncate font-mono text-[11px] text-[#9a9084]">
+                      Verified {formatRelativeTime(activeDep.verified_at || activeDep.created_at)}
+                    </p>
+                  </>
+                );
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="h-4 w-4 text-[#f4ba4a]" />
+                Custom Domains
+              </CardTitle>
+              <CardDescription>{initialDomains.length} attached</CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/domains">Manage</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {initialDomains.length === 0 ? (
+              <p className="text-xs text-[#9a9084]">
+                No custom domains attached. Bind a domain to serve this project over HTTPS.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {initialDomains.slice(0, 3).map((dom) => (
+                  <div
+                    key={dom.id}
+                    className="flex items-center justify-between rounded-lg border border-[#26201a] bg-[#0f0c0a] px-2.5 py-1.5 text-xs"
+                  >
+                    <span className="truncate font-mono text-[#f7f3ec]">{dom.domain}</span>
+                    <span
+                      className={`font-mono text-[10px] ${
+                        dom.ssl_status === "active"
+                          ? "text-emerald-400"
+                          : dom.verification_status === "verified"
+                          ? "text-amber-300"
+                          : "text-[#9a9084]"
+                      }`}
+                    >
+                      {dom.verification_status} · TLS:{dom.ssl_status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Tabs defaultValue="deployments">
         <TabsList>

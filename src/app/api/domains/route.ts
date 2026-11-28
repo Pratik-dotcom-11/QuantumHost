@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { getPublicEnv } from "@/lib/env";
+import { registerDomainWithProvider, removeDomainFromProvider } from "@/lib/hosting/domains";
 
 const createDomainSchema = z.object({
   projectId: z.string().uuid(),
@@ -23,7 +24,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("custom_domains")
     .select(
-      "id, project_id, domain, verification_token, verification_status, ssl_status, dns_records, last_checked_at, verified_at, created_at"
+      "id, project_id, domain, provider, provider_hostname_id, verification_token, verification_status, ssl_status, https_verified, https_status_code, verification_error, dns_records, last_checked_at, last_https_checked_at, verified_at, created_at"
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -67,20 +68,14 @@ export async function POST(request: Request) {
 
   const verificationToken = `qh-verify=${randomBytes(16).toString("hex")}`;
   const { appUrl } = getPublicEnv();
-  const edgeHost = new URL(appUrl).hostname;
 
-  const dnsRecords = [
-    {
-      type: "TXT",
-      name: `_quantumhost.${parsed.data.domain}`,
-      value: verificationToken,
-    },
-    {
-      type: "CNAME",
-      name: parsed.data.domain,
-      value: edgeHost === "localhost" ? "cname.quantumhost.cloud" : edgeHost,
-    },
-  ];
+  const registration = await registerDomainWithProvider({
+    domain: parsed.data.domain,
+    projectId: project.id,
+    projectSlug: project.slug,
+    appUrl,
+    verificationToken,
+  });
 
   const { data: domain, error } = await supabase
     .from("custom_domains")
@@ -88,15 +83,20 @@ export async function POST(request: Request) {
       project_id: project.id,
       user_id: user.id,
       domain: parsed.data.domain,
+      provider: registration.provider,
+      provider_hostname_id: registration.providerHostnameId,
       verification_token: verificationToken,
-      verification_status: "pending",
-      ssl_status: "pending",
-      dns_records: dnsRecords,
+      verification_status: registration.verificationStatus,
+      ssl_status: registration.sslStatus,
+      https_verified: false,
+      verification_error: registration.verificationError,
+      dns_records: registration.dnsRecords,
     })
     .select("*")
     .single();
 
   if (error) {
+    await removeDomainFromProvider(registration.provider, registration.providerHostnameId);
     const isConflict = error.code === "23505";
     return NextResponse.json(
       {
@@ -120,6 +120,19 @@ export async function DELETE(request: Request) {
   if (!id) {
     return NextResponse.json({ error: "Domain id is required" }, { status: 400 });
   }
+
+  const { data: existing } = await supabase
+    .from("custom_domains")
+    .select("id, provider, provider_hostname_id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+  }
+
+  await removeDomainFromProvider(existing.provider, existing.provider_hostname_id);
 
   const { error } = await supabase
     .from("custom_domains")

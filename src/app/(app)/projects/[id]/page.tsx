@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { requirePageUser } from "@/lib/auth";
 import { decryptSecret, maskSecret } from "@/lib/crypto";
+import { getPublicEnv } from "@/lib/env";
+import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
 import { ProjectDetailClient } from "@/components/projects/project-detail-client";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +28,11 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  const [{ data: deployments }, { data: rawEnv }] = await Promise.all([
+  const [{ data: deployments }, { data: rawEnv }, { data: projectDomains }] = await Promise.all([
     supabase
       .from("deployments")
       .select(
-        "id, deployment_number, status, environment, trigger_source, git_branch, git_commit_sha, git_commit_message, artifact_size_bytes, build_duration_ms, preview_url, created_at"
+        "id, deployment_number, status, environment, trigger_source, git_branch, git_commit_sha, git_commit_message, artifact_size_bytes, build_duration_ms, hosting_provider, preview_url, production_url, verified_at, created_at"
       )
       .eq("project_id", project.id)
       .eq("user_id", user.id)
@@ -42,7 +44,20 @@ export default async function ProjectDetailPage({
       .eq("project_id", project.id)
       .eq("user_id", user.id)
       .order("key", { ascending: true }),
+    supabase
+      .from("custom_domains")
+      .select("id, domain, verification_status, ssl_status, https_verified")
+      .eq("project_id", project.id)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
+
+  const { appUrl } = getPublicEnv();
+  const hostingUrls = buildDeploymentHostingUrls({
+    appUrl,
+    slug: project.slug,
+    deploymentId: project.active_deployment_id ?? project.id,
+  });
 
   const envVars = (rawEnv ?? []).map((row) => {
     let preview = "••••••";
@@ -67,6 +82,8 @@ export default async function ProjectDetailPage({
       initialProject={project}
       initialDeployments={deployments ?? []}
       initialEnvVars={envVars}
+      initialDomains={projectDomains ?? []}
+      hostingUrls={hostingUrls}
     />
   );
 }

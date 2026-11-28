@@ -30,3 +30,13 @@ Both TypeScript guards and PostgreSQL trigger `validate_deployment_status_transi
 - **Hardened Docker Sandbox (`DOCKER_ISOLATION=true`)**: Runs with `--user 1000:1000`, `--cpus=1`, `--memory=1g`, `--pids-limit=256`, `--cap-drop=ALL`, `--security-opt=no-new-privileges:true`, and `--network=none` during the `build` stage.
 - **Process Timeouts & Output Quotas**: `BUILD_TIMEOUT_MS` (default `180000` ms) kills runaway process trees; `BUILD_MAX_OUTPUT_BYTES` (default `52428800` bytes) caps bundle size; symlinks escaping the output directory are skipped.
 - **Cleanup**: Temporary workspaces under `os.tmpdir()/qh-builds/<deploymentId>` are always removed inside `finally`.
+
+## 5. Website Hosting, Multi-Tenant Routing & Custom Domains (Phase 6)
+
+- **Modular Hosting Adapter**: `resolveHostingProviderAdapter()` supports `quantumhost-edge` and `cloudflare-saas` (`HOSTING_PROVIDER=cloudflare`), activating immutable preview routes BEFORE atomically promoting `projects.active_deployment_id` (`ready` state only). Failed or cancelled deployments never overwrite live production traffic.
+- **Multi-Tenant URLs & Host Routing (`src/proxy.ts`, `src/lib/hosting/urls.ts`)**:
+  - When `NEXT_PUBLIC_PLATFORM_DOMAIN=quantumhost.app` (with wildcard DNS + TLS), production URLs resolve to `https://<slug>.quantumhost.app` and immutable deployment previews resolve to `https://<slug>-d-<uuid32>.quantumhost.app`.
+  - Without wildcard DNS configured (e.g. `localhost:3000` or single-host control plane), deployments receive accessible `<appUrl>/sites/<slug>` and `<appUrl>/d/<deploymentId>` routes alongside Host-header routing for `<slug>.localhost:3000` and verified custom domains (`published_routes.verified_domains`).
+- **Cloudflare for SaaS & Domain TLS Verification (`src/lib/hosting/cloudflare.ts`, `src/lib/hosting/domains.ts`)**:
+  - Integrates Cloudflare Custom Hostnames API v4 (`POST/GET/PATCH/DELETE /zones/{zone_id}/custom_hostnames`) when `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` are set.
+  - Combines live DNS `TXT` / `CNAME` resolution and active `tls.connect` + `https://` probes; `ssl_status` is marked `active` only when Cloudflare confirms SSL active or real DNS routing + TLS certificate validation succeed.

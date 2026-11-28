@@ -13,6 +13,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { requirePageUser } from "@/lib/auth";
+import { getPublicEnv } from "@/lib/env";
+import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
 import { isActiveDeploymentStatus } from "@/lib/deployments/lifecycle";
 import { QuickDeployButton } from "@/components/dashboard/quick-deploy-button";
@@ -50,14 +52,14 @@ export default async function DashboardPage() {
     supabase
       .from("deployments")
       .select(
-        "id, project_id, deployment_number, status, environment, trigger_source, git_branch, git_commit_message, build_duration_ms, created_at"
+        "id, project_id, deployment_number, status, environment, trigger_source, git_branch, git_commit_message, build_duration_ms, production_url, created_at"
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
       .from("custom_domains")
-      .select("id, verification_status")
+      .select("id, project_id, domain, verification_status, ssl_status, https_verified")
       .eq("user_id", user.id),
     supabase
       .from("uptime_monitors")
@@ -377,6 +379,21 @@ export default async function DashboardPage() {
               <div className="space-y-3">
                 {projectList.slice(0, 6).map((project) => {
                   const monitor = monitorList.find((m) => m.project_id === project.id);
+                  const activeDep = deploymentList.find(
+                    (d) => d.id === project.active_deployment_id
+                  );
+                  const projectDomains = (domains ?? []).filter(
+                    (d) => d.project_id === project.id
+                  );
+                  const verifiedSslDomain = projectDomains.find(
+                    (d) => d.verification_status === "verified" && d.ssl_status === "active"
+                  );
+                  const { appUrl } = getPublicEnv();
+                  const urls = buildDeploymentHostingUrls({
+                    appUrl,
+                    slug: project.slug,
+                    deploymentId: project.active_deployment_id ?? project.id,
+                  });
                   return (
                     <div
                       key={project.id}
@@ -393,10 +410,20 @@ export default async function DashboardPage() {
                           <span className="rounded-full border border-[#2a231c] bg-[#1a1511] px-2.5 py-0.5 font-mono text-[11px] text-[#9a9084]">
                             {project.framework}
                           </span>
+                          {activeDep ? (
+                            <span className="rounded-full border border-emerald-500/35 bg-emerald-500/12 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+                              Prod #{activeDep.deployment_number}
+                            </span>
+                          ) : null}
                         </div>
                         <p className="mt-1 truncate font-mono text-xs text-[#9a9084]">
                           {project.repo_full_name || "No repository linked"} ·{" "}
-                          {project.default_branch}
+                          {project.default_branch} ·{" "}
+                          {verifiedSslDomain
+                            ? `${verifiedSslDomain.domain} (TLS active)`
+                            : project.active_deployment_id
+                            ? urls.productionUrl
+                            : "Not published yet"}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -409,7 +436,7 @@ export default async function DashboardPage() {
                         />
                         {project.active_deployment_id ? (
                           <Button asChild variant="outline" size="sm">
-                            <Link href={`/sites/${project.slug}`} target="_blank">
+                            <Link href={urls.fallbackProductionUrl} target="_blank">
                               Live
                               <ArrowUpRight className="h-3.5 w-3.5" />
                             </Link>
@@ -494,6 +521,7 @@ export default async function DashboardPage() {
               <p className="text-sm font-medium text-[#f7f3ec]">Custom Domains</p>
               <p className="text-xs text-[#9a9084]">
                 {(domains ?? []).filter((d) => d.verification_status === "verified").length} verified /{" "}
+                {(domains ?? []).filter((d) => d.ssl_status === "active").length} TLS active /{" "}
                 {domains?.length ?? 0} total
               </p>
             </div>

@@ -3,11 +3,14 @@
 import React, { useState } from "react";
 import {
   AlertCircle,
+  ArrowUpRight,
   CheckCircle2,
   Globe,
   Loader2,
+  Lock,
   Plus,
   RefreshCw,
+  ShieldAlert,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
@@ -25,23 +28,31 @@ interface ProjectOption {
   id: string;
   name: string;
   slug: string;
+  active_deployment_id?: string | null;
 }
 
 interface DnsRecord {
   type: string;
   name: string;
   value: string;
+  purpose?: string;
 }
 
 interface CustomDomainRow {
   id: string;
   project_id: string;
   domain: string;
+  provider?: string;
+  provider_hostname_id?: string | null;
   verification_token: string;
   verification_status: string;
   ssl_status: string;
+  https_verified?: boolean;
+  https_status_code?: number | null;
+  verification_error?: string | null;
   dns_records: DnsRecord[];
   last_checked_at: string | null;
+  last_https_checked_at?: string | null;
   verified_at: string | null;
 }
 
@@ -58,6 +69,7 @@ export function DomainsClient({
   const [domainInput, setDomainInput] = useState("");
   const [creating, setCreating] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const projectMap = new Map(projects.map((p) => [p.id, p]));
@@ -77,21 +89,18 @@ export function DomainsClient({
       setDomains((prev) => [json.domain!, ...prev]);
       setDomainInput("");
       toast({
-        title: "Custom domain attached",
-        description: `Configure DNS records for ${json.domain.domain} and run Verify DNS.`,
+        title: "Custom domain registered",
+        description: `Configure DNS records for ${json.domain.domain} and run Verify DNS & SSL.`,
         variant: "success",
       });
       setFeedback({
         type: "ok",
-        text: "Domain attached. Configure the DNS records below, then click Verify DNS.",
+        text: "Domain attached. Configure the DNS records below, then click Verify DNS & SSL.",
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to add domain";
       toast({ title: "Failed to add domain", description: msg, variant: "error" });
-      setFeedback({
-        type: "err",
-        text: msg,
-      });
+      setFeedback({ type: "err", text: msg });
     } finally {
       setCreating(false);
     }
@@ -104,17 +113,22 @@ export function DomainsClient({
       const res = await fetch(`/api/domains/${id}/verify`, { method: "POST" });
       const json = (await res.json()) as {
         domain?: CustomDomainRow;
-        diagnostics?: { txtMatched: boolean; cnameMatched: boolean };
         error?: string;
       };
       if (!res.ok || !json.domain) throw new Error(json.error || "Verification check failed");
       setDomains((prev) => prev.map((d) => (d.id === id ? json.domain! : d)));
+
+      const verified = json.domain.verification_status === "verified";
+      const sslActive = json.domain.ssl_status === "active";
+
       setFeedback({
-        type: json.domain.verification_status === "verified" ? "ok" : "err",
-        text:
-          json.domain.verification_status === "verified"
-            ? `${json.domain.domain} verified and TLS marked active.`
-            : `TXT verification record not found yet for ${json.domain.domain}. Check DNS propagation and retry.`,
+        type: verified ? "ok" : "err",
+        text: verified && sslActive
+          ? `${json.domain.domain} verified and HTTPS/TLS is active.`
+          : verified
+          ? `${json.domain.domain} ownership verified; TLS status is ${json.domain.ssl_status}. ${json.domain.verification_error || ""}`
+          : json.domain.verification_error ||
+            `DNS verification failed for ${json.domain.domain}. Check your DNS records and retry.`,
       });
     } catch (err) {
       setFeedback({
@@ -127,9 +141,15 @@ export function DomainsClient({
   }
 
   async function handleDelete(id: string) {
-    const res = await fetch(`/api/domains?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (res.ok) {
-      setDomains((prev) => prev.filter((d) => d.id !== id));
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/domains?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) {
+        setDomains((prev) => prev.filter((d) => d.id !== id));
+        toast({ title: "Domain removed", description: "Custom domain and edge binding removed." });
+      }
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -139,7 +159,7 @@ export function DomainsClient({
         <CardHeader>
           <CardTitle>Attach Custom Domain</CardTitle>
           <CardDescription>
-            Bind an external hostname to any QuantumHost project and verify ownership via live DNS TXT lookup.
+            Bind an external hostname to any QuantumHost project, inspect DNS records, and verify ownership + SSL/TLS.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -214,6 +234,15 @@ export function DomainsClient({
           {domains.map((dom) => {
             const proj = projectMap.get(dom.project_id);
             const records = Array.isArray(dom.dns_records) ? dom.dns_records : [];
+            const sslVariant =
+              dom.ssl_status === "active"
+                ? "success"
+                : dom.ssl_status === "provisioning"
+                ? "warning"
+                : dom.ssl_status === "error"
+                ? "destructive"
+                : "secondary";
+
             return (
               <Card key={dom.id}>
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -229,12 +258,23 @@ export function DomainsClient({
                             : "warning"
                         }
                       >
-                        {dom.verification_status}
+                        DNS: {dom.verification_status}
                       </Badge>
-                      <Badge variant={dom.ssl_status === "active" ? "success" : "secondary"}>
+                      <Badge variant={sslVariant}>
                         <ShieldCheck className="h-3 w-3" />
                         TLS: {dom.ssl_status}
                       </Badge>
+                      {dom.https_verified ? (
+                        <Badge variant="success">
+                          <Lock className="h-3 w-3" />
+                          HTTPS Verified{dom.https_status_code ? ` (${dom.https_status_code})` : ""}
+                        </Badge>
+                      ) : null}
+                      {dom.provider ? (
+                        <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+                          {dom.provider}
+                        </span>
+                      ) : null}
                     </div>
                     <CardDescription className="mt-1">
                       Project: {proj?.name || "Unknown"} · Last checked:{" "}
@@ -242,6 +282,14 @@ export function DomainsClient({
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
+                    {dom.verification_status === "verified" && dom.https_verified ? (
+                      <Button asChild variant="secondary" size="sm">
+                        <a href={`https://${dom.domain}`} target="_blank" rel="noreferrer">
+                          Open
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                    ) : null}
                     <Button
                       variant="outline"
                       size="sm"
@@ -253,26 +301,38 @@ export function DomainsClient({
                       ) : (
                         <RefreshCw className="h-3.5 w-3.5" />
                       )}
-                      Verify DNS
+                      Verify DNS &amp; SSL
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(dom.id)}
+                      disabled={deletingId === dom.id}
                       aria-label={`Remove ${dom.domain}`}
                     >
-                      <Trash2 className="h-4 w-4 text-rose-400" />
+                      {deletingId === dom.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 text-rose-400" />
+                      )}
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  {dom.verification_error ? (
+                    <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                      <span>{dom.verification_error}</span>
+                    </div>
+                  ) : null}
                   <div className="overflow-x-auto rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
                     <table className="w-full text-left font-mono text-xs">
                       <thead className="border-b border-[#26201a] text-[#9a9084]">
                         <tr>
                           <th className="pb-2 pr-4">Type</th>
                           <th className="pb-2 pr-4">Host / Name</th>
-                          <th className="pb-2">Value</th>
+                          <th className="pb-2 pr-4">Value</th>
+                          <th className="pb-2">Purpose</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#221c16]">
@@ -280,7 +340,8 @@ export function DomainsClient({
                           <tr key={idx}>
                             <td className="py-2 pr-4 font-semibold text-[#f4ba4a]">{rec.type}</td>
                             <td className="py-2 pr-4 text-[#f7f3ec]">{rec.name}</td>
-                            <td className="py-2 break-all text-[#9a9084]">{rec.value}</td>
+                            <td className="py-2 pr-4 break-all text-[#9a9084]">{rec.value}</td>
+                            <td className="py-2 text-[#9a9084]">{rec.purpose || "Routing"}</td>
                           </tr>
                         ))}
                       </tbody>

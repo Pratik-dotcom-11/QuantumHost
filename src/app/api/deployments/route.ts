@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
+import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
 import { getPublicEnv } from "@/lib/env";
 import { getLatestCommit, resolveConnectionToken } from "@/lib/github/client";
+import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
 import { enqueueBuildJob } from "@/lib/queue/bullmq";
 
 const createDeploymentSchema = z.object({
@@ -133,11 +135,23 @@ export async function POST(request: Request) {
   }
 
   const { appUrl } = getPublicEnv();
-  const previewUrl = `${appUrl}/d/${deployment.id}`;
+  const hostingUrls = buildDeploymentHostingUrls({
+    appUrl,
+    slug: project.slug,
+    deploymentId: deployment.id,
+  });
+  const adapter = resolveHostingProviderAdapter();
+  const previewUrl = hostingUrls.previewUrl;
+  const productionUrl =
+    parsed.data.environment === "production" ? hostingUrls.productionUrl : null;
 
   await supabase
     .from("deployments")
-    .update({ preview_url: previewUrl })
+    .update({
+      hosting_provider: adapter.name,
+      preview_url: previewUrl,
+      production_url: productionUrl,
+    })
     .eq("id", deployment.id)
     .eq("user_id", user.id);
 

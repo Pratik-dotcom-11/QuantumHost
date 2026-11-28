@@ -47,7 +47,10 @@ export async function GET(
     !deployment.artifact_key ||
     !deployment.artifact_storage_provider
   ) {
-    return new NextResponse("Deployment preview not available", { status: 404 });
+    return new NextResponse("Deployment preview not available", {
+      status: 404,
+      headers: { "X-Content-Type-Options": "nosniff" },
+    });
   }
 
   const asset = await readArtifactAsset(
@@ -57,7 +60,10 @@ export async function GET(
   );
 
   if (!asset) {
-    return new NextResponse("Asset not found in deployment artifact", { status: 404 });
+    return new NextResponse("Asset not found in deployment artifact", {
+      status: 404,
+      headers: { "X-Content-Type-Options": "nosniff" },
+    });
   }
 
   return new NextResponse(Buffer.from(asset.bytes), {
@@ -65,6 +71,9 @@ export async function GET(
     headers: {
       "Content-Type": asset.contentType,
       "Cache-Control": "public, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
       "X-QuantumHost-Deployment": deployment.id,
     },
   });

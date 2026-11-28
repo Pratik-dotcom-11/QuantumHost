@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { decryptSecret } from "@/lib/crypto";
+import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
 import { getPublicEnv, getServerSupabaseServiceKey } from "@/lib/env";
 import { verifyGitHubWebhookSignature } from "@/lib/github/client";
 import { evaluateGitHubWebhookEvent } from "@/lib/github/webhook";
+import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
 import { enqueueBuildJob } from "@/lib/queue/bullmq";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -156,9 +158,21 @@ export async function POST(request: Request) {
 
     if (depErr || !deployment) continue;
 
+    const hostingUrls = buildDeploymentHostingUrls({
+      appUrl,
+      slug: project.slug,
+      deploymentId: deployment.id,
+    });
+    const adapter = resolveHostingProviderAdapter();
+
     await admin
       .from("deployments")
-      .update({ preview_url: `${appUrl}/d/${deployment.id}` })
+      .update({
+        hosting_provider: adapter.name,
+        preview_url: hostingUrls.previewUrl,
+        production_url:
+          decision.environment === "production" ? hostingUrls.productionUrl : null,
+      })
       .eq("id", deployment.id);
 
     try {

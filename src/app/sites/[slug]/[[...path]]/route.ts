@@ -6,6 +6,15 @@ import type { StorageProviderType } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ slug: string; path?: string[] }> }
@@ -19,10 +28,22 @@ export async function GET(
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error || !route || !route.active_deployment_id || !route.artifact_key || !route.artifact_storage_provider) {
+  if (
+    error ||
+    !route ||
+    !route.active_deployment_id ||
+    !route.artifact_key ||
+    !route.artifact_storage_provider
+  ) {
     return new NextResponse(
-      `<!doctype html><html><body style="font-family:sans-serif;background:#080a0f;color:#e2e8f0;padding:48px;text-align:center"><h1>404 — Deployment Not Found</h1><p>No active QuantumHost deployment is published for <strong>${slug}</strong>.</p></body></html>`,
-      { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      `<!doctype html><html><body style="font-family:sans-serif;background:#080a0f;color:#e2e8f0;padding:48px;text-align:center"><h1>404 — Deployment Not Found</h1><p>No active QuantumHost deployment is published for <strong>${escapeHtml(slug)}</strong>.</p></body></html>`,
+      {
+        status: 404,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+        },
+      }
     );
   }
 
@@ -33,7 +54,27 @@ export async function GET(
   );
 
   if (!asset) {
-    return new NextResponse("Asset not found", { status: 404 });
+    // Check if the deployed bundle provides a custom 404.html page
+    const custom404 = await readArtifactAsset(
+      route.artifact_storage_provider as StorageProviderType,
+      route.artifact_key,
+      ["404.html"]
+    );
+    if (custom404) {
+      return new NextResponse(Buffer.from(custom404.bytes), {
+        status: 404,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+          "X-QuantumHost-Project": slug,
+          "X-QuantumHost-Deployment": route.active_deployment_id,
+        },
+      });
+    }
+    return new NextResponse("Asset not found", {
+      status: 404,
+      headers: { "X-Content-Type-Options": "nosniff" },
+    });
   }
 
   // Record bandwidth/request telemetry asynchronously when service role key is configured
@@ -76,7 +117,13 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": asset.contentType,
-      "Cache-Control": isHtml ? "public, max-age=0, must-revalidate" : "public, max-age=31536000, immutable",
+      "Cache-Control": isHtml
+        ? "public, max-age=0, must-revalidate"
+        : "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-QuantumHost-Project": slug,
       "X-QuantumHost-Deployment": route.active_deployment_id,
     },
   });

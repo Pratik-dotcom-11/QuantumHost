@@ -113,12 +113,18 @@ export interface Database {
           created_at: string;
           dns_records: Json;
           domain: string;
+          https_status_code: number | null;
+          https_verified: boolean;
           id: string;
           last_checked_at: string | null;
+          last_https_checked_at: string | null;
           project_id: string;
+          provider: string;
+          provider_hostname_id: string | null;
           ssl_status: string;
           updated_at: string;
           user_id: string;
+          verification_error: string | null;
           verification_status: string;
           verification_token: string;
           verified_at: string | null;
@@ -127,12 +133,18 @@ export interface Database {
           created_at?: string;
           dns_records?: Json;
           domain: string;
+          https_status_code?: number | null;
+          https_verified?: boolean;
           id?: string;
           last_checked_at?: string | null;
+          last_https_checked_at?: string | null;
           project_id: string;
+          provider?: string;
+          provider_hostname_id?: string | null;
           ssl_status?: string;
           updated_at?: string;
           user_id: string;
+          verification_error?: string | null;
           verification_status?: string;
           verification_token: string;
           verified_at?: string | null;
@@ -141,12 +153,18 @@ export interface Database {
           created_at?: string;
           dns_records?: Json;
           domain?: string;
+          https_status_code?: number | null;
+          https_verified?: boolean;
           id?: string;
           last_checked_at?: string | null;
+          last_https_checked_at?: string | null;
           project_id?: string;
+          provider?: string;
+          provider_hostname_id?: string | null;
           ssl_status?: string;
           updated_at?: string;
           user_id?: string;
+          verification_error?: string | null;
           verification_status?: string;
           verification_token?: string;
           verified_at?: string | null;
@@ -205,9 +223,11 @@ export interface Database {
           git_branch: string | null;
           git_commit_message: string | null;
           git_commit_sha: string | null;
+          hosting_provider: string;
           id: string;
           job_id: string | null;
           preview_url: string | null;
+          production_url: string | null;
           project_id: string;
           rollback_from_deployment_id: string | null;
           started_at: string | null;
@@ -215,6 +235,7 @@ export interface Database {
           trigger_source: string;
           updated_at: string;
           user_id: string;
+          verified_at: string | null;
         };
         Insert: {
           ai_diagnosis?: Json | null;
@@ -231,9 +252,11 @@ export interface Database {
           git_branch?: string | null;
           git_commit_message?: string | null;
           git_commit_sha?: string | null;
+          hosting_provider?: string;
           id?: string;
           job_id?: string | null;
           preview_url?: string | null;
+          production_url?: string | null;
           project_id: string;
           rollback_from_deployment_id?: string | null;
           started_at?: string | null;
@@ -241,6 +264,7 @@ export interface Database {
           trigger_source?: string;
           updated_at?: string;
           user_id: string;
+          verified_at?: string | null;
         };
         Update: {
           ai_diagnosis?: Json | null;
@@ -257,9 +281,11 @@ export interface Database {
           git_branch?: string | null;
           git_commit_message?: string | null;
           git_commit_sha?: string | null;
+          hosting_provider?: string;
           id?: string;
           job_id?: string | null;
           preview_url?: string | null;
+          production_url?: string | null;
           project_id?: string;
           rollback_from_deployment_id?: string | null;
           started_at?: string | null;
@@ -267,6 +293,7 @@ export interface Database {
           trigger_source?: string;
           updated_at?: string;
           user_id?: string;
+          verified_at?: string | null;
         };
         Relationships: [];
       };

@@ -1,7 +1,7 @@
-import { resolveCname, resolveTxt } from "node:dns/promises";
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { getPublicEnv } from "@/lib/env";
+import { verifyDomainAndSsl } from "@/lib/hosting/domains";
 
 export async function POST(
   _request: Request,
@@ -23,53 +23,29 @@ export async function POST(
   }
 
   const { appUrl } = getPublicEnv();
-  const expectedHost = new URL(appUrl).hostname;
-  const txtTargets = [`_quantumhost.${domainRow.domain}`, domainRow.domain];
+  const outcome = await verifyDomainAndSsl({
+    domain: domainRow.domain,
+    verificationToken: domainRow.verification_token,
+    appUrl,
+    provider: domainRow.provider,
+    providerHostnameId: domainRow.provider_hostname_id,
+  });
 
-  let txtMatched = false;
-  const observedTxt: string[] = [];
-
-  for (const host of txtTargets) {
-    try {
-      const records = await resolveTxt(host);
-      for (const chunks of records) {
-        const flat = chunks.join("");
-        observedTxt.push(`${host}: ${flat}`);
-        if (flat.includes(domainRow.verification_token)) {
-          txtMatched = true;
-        }
-      }
-    } catch {
-      // Host may not have TXT records yet
-    }
-  }
-
-  let cnameMatched = false;
-  const observedCname: string[] = [];
-  try {
-    const cnames = await resolveCname(domainRow.domain);
-    observedCname.push(...cnames);
-    cnameMatched = cnames.some(
-      (c) =>
-        c.toLowerCase().includes("quantumhost") ||
-        (expectedHost !== "localhost" && c.toLowerCase() === expectedHost.toLowerCase())
-    );
-  } catch {
-    // No CNAME found
-  }
-
-  const isVerified = txtMatched;
-  const verificationStatus = isVerified ? "verified" : "failed";
-  const sslStatus = isVerified ? "active" : "pending";
   const now = new Date().toISOString();
-
   const { data: updated, error } = await supabase
     .from("custom_domains")
     .update({
-      verification_status: verificationStatus,
-      ssl_status: sslStatus,
+      provider: outcome.provider,
+      provider_hostname_id: outcome.providerHostnameId,
+      verification_status: outcome.verificationStatus,
+      ssl_status: outcome.sslStatus,
+      https_verified: outcome.httpsVerified,
+      https_status_code: outcome.httpsStatusCode,
+      verification_error: outcome.verificationError,
+      ...(outcome.dnsRecords ? { dns_records: outcome.dnsRecords } : {}),
       last_checked_at: now,
-      verified_at: isVerified ? now : domainRow.verified_at,
+      last_https_checked_at: now,
+      verified_at: outcome.verificationStatus === "verified" ? domainRow.verified_at ?? now : domainRow.verified_at,
     })
     .eq("id", domainRow.id)
     .eq("user_id", user.id)
@@ -82,11 +58,6 @@ export async function POST(
 
   return NextResponse.json({
     domain: updated,
-    diagnostics: {
-      txtMatched,
-      cnameMatched,
-      observedTxt,
-      observedCname,
-    },
+    diagnostics: outcome.diagnostics,
   });
 }

@@ -6,7 +6,7 @@ import { decryptSecret } from "@/lib/crypto";
 import { getPublicEnv } from "@/lib/env";
 import { detectFrameworkFromPackageJson } from "@/lib/frameworks";
 import { resolveConnectionToken } from "@/lib/github/client";
-import { quantumHostEdgeAdapter } from "@/lib/deployments/hosting-adapter";
+import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
 import { assertDeploymentTransition } from "@/lib/deployments/lifecycle";
 import type { BuildJobPayload } from "@/lib/queue/bullmq";
 import { uploadArtifactDirectory } from "@/lib/storage/artifacts";
@@ -466,10 +466,11 @@ export async function executeDeploymentLifecycle(
       `Uploaded ${artifact.fileCount} files (${artifact.sizeBytes} bytes) to ${artifact.provider}.`
     );
 
-    // 5. DEPLOYING (Hosting Provider Adapter Activation)
+    // 5. DEPLOYING (Hosting Provider Adapter Preview Registration)
     await transition("deploying");
+    const adapter = resolveHostingProviderAdapter();
     const { appUrl } = getPublicEnv();
-    const activation = await quantumHostEdgeAdapter.activate({
+    const activation = await adapter.activatePreview({
       deploymentId,
       projectId,
       projectSlug: project.slug,
@@ -482,16 +483,16 @@ export async function executeDeploymentLifecycle(
     await logger.log(
       "deploy",
       "info",
-      `Activated deployment via ${quantumHostEdgeAdapter.name} -> ${activation.targetUrl}`
+      `Registered immutable preview via ${adapter.name} -> ${activation.previewUrl}`
     );
 
-    // 6. VERIFYING
+    // 6. VERIFYING (verify stored artifacts & preview endpoint BEFORE promoting production)
     await transition("verifying");
-    const verification = await quantumHostEdgeAdapter.verify({
+    const verification = await adapter.verify({
       deploymentId,
       storageProvider: artifact.provider as StorageProviderType,
       artifactKey: artifact.artifactKey,
-      verifyUrl: activation.targetUrl,
+      verifyUrl: activation.verifyTargetUrl,
       strictHttp: options.strictHttpVerify,
     });
     await logger.log(
@@ -502,12 +503,29 @@ export async function executeDeploymentLifecycle(
         : `Verified immutable artifact entry (${verification.entryPath}) in ${artifact.provider}.`
     );
 
-    // 7. READY (only after artifact upload, activation, AND verification succeed)
+    // 7. READY (mark ready before atomic production pointer promotion)
     const durationMs = Date.now() - startedAt;
+    const nowIso = new Date().toISOString();
     await transition("ready", {
       build_duration_ms: durationMs,
-      finished_at: new Date().toISOString(),
+      finished_at: nowIso,
+      verified_at: nowIso,
     });
+
+    // 8. Promote active production deployment atomically after verified READY state
+    if (environment === "production") {
+      const promoted = await adapter.promoteProduction({
+        projectId,
+        projectSlug: project.slug,
+        deploymentId,
+        appUrl,
+      });
+      await logger.log(
+        "deploy",
+        "info",
+        `Promoted production traffic to deployment ${promoted.activeDeploymentId} (${promoted.productionUrl}).`
+      );
+    }
 
     await admin.from("resource_usage_events").insert([
       {
