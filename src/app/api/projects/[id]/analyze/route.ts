@@ -5,6 +5,7 @@ import {
   resolveConnectionToken,
 } from "@/lib/github/client";
 import { analyzeDeployReadiness } from "@/lib/intelligence/deploy-analyzer";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 import type { FrameworkType } from "@/types/database";
 
 export async function POST(
@@ -14,6 +15,9 @@ export async function POST(
   const { id } = await context.params;
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`deploy-analyze:${user.id}`, 20, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   const [{ data: project }, { data: envRows }] = await Promise.all([
     supabase

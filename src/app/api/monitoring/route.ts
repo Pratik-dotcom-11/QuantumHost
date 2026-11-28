@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
+import { assertSafeOutboundHttpUrl } from "@/lib/security/url-safety";
 import type { Database } from "@/types/database";
 
 const updateMonitorSchema = z.object({
@@ -55,7 +56,17 @@ export async function PATCH(request: Request) {
   }
 
   const updates: Database["public"]["Tables"]["uptime_monitors"]["Update"] = {};
-  if (parsed.data.targetUrl !== undefined) updates.target_url = parsed.data.targetUrl;
+  if (parsed.data.targetUrl !== undefined) {
+    try {
+      await assertSafeOutboundHttpUrl(parsed.data.targetUrl);
+    } catch (ssrfErr) {
+      return NextResponse.json(
+        { error: ssrfErr instanceof Error ? ssrfErr.message : "Unsafe monitor targetUrl" },
+        { status: 400 }
+      );
+    }
+    updates.target_url = parsed.data.targetUrl;
+  }
   if (parsed.data.intervalSeconds !== undefined) {
     updates.interval_seconds = parsed.data.intervalSeconds;
   }

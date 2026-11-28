@@ -4,6 +4,7 @@ import { requireApiUser } from "@/lib/auth";
 import { decryptSecret } from "@/lib/crypto";
 import { askDeploymentCopilot } from "@/lib/ai/provider";
 import { buildUsageSummary } from "@/lib/usage/summary";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 import type { AiProviderType, Json } from "@/types/database";
 
 const copilotSchema = z.object({
@@ -69,6 +70,9 @@ export async function GET() {
 export async function POST(request: Request) {
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`ai-copilot:${user.id}`, 20, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   let body: unknown;
   try {

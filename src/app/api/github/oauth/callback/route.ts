@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
@@ -20,7 +21,11 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   const savedState = cookieStore.get("qh_github_oauth_state")?.value;
 
-  if (!code || !state || !savedState || state !== savedState) {
+  const stateMatches =
+    Boolean(state && savedState && state.length === savedState.length) &&
+    timingSafeEqual(Buffer.from(state!), Buffer.from(savedState!));
+
+  if (!code || !stateMatches) {
     return NextResponse.redirect(`${appUrl}/settings?github_error=invalid_state`);
   }
 

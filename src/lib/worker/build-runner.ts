@@ -5,7 +5,7 @@ import path from "node:path";
 import { decryptSecret } from "@/lib/crypto";
 import { getPublicEnv } from "@/lib/env";
 import { detectFrameworkFromPackageJson } from "@/lib/frameworks";
-import { resolveConnectionToken } from "@/lib/github/client";
+import { isValidRepoFullName, resolveConnectionToken } from "@/lib/github/client";
 import { resolveHostingProviderAdapter } from "@/lib/deployments/hosting-adapter";
 import { assertDeploymentTransition } from "@/lib/deployments/lifecycle";
 import type { BuildJobPayload } from "@/lib/queue/bullmq";
@@ -200,6 +200,96 @@ export async function runIsolatedCommand(params: {
   });
 }
 
+export function sanitizeGitBranchName(rawBranch: string): string {
+  const cleaned = rawBranch.trim();
+  if (
+    !cleaned ||
+    cleaned.startsWith("-") ||
+    cleaned.includes("..") ||
+    !/^[a-zA-Z0-9._/-]{1,120}$/.test(cleaned)
+  ) {
+    throw new DeterministicBuildError(`Invalid git branch name "${rawBranch}".`);
+  }
+  return cleaned;
+}
+
+async function runGitCloneIsolated(params: {
+  branch: string;
+  cloneUrl: string;
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  timeoutMs: number;
+  redactTokens: string[];
+  onLine: (line: string, isError: boolean) => Promise<void>;
+}): Promise<void> {
+  const sanitize = (text: string) => {
+    let out = text;
+    for (const token of params.redactTokens) {
+      if (token && token.length > 4) {
+        out = out.split(token).join("[REDACTED]");
+      }
+    }
+    return out;
+  };
+
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const child = spawn(
+      "git",
+      ["clone", "--depth", "1", "--branch", params.branch, "--", params.cloneUrl, "repo"],
+      {
+        cwd: params.cwd,
+        shell: false,
+        env: params.env,
+        stdio: ["ignore", "pipe", "pipe"],
+      }
+    );
+
+    const pendingLogs: Promise<void>[] = [];
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        // Ignore if already exited
+      }
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      void Promise.allSettled(pendingLogs).then(() =>
+        reject(new DeterministicBuildError(`Git clone timed out after ${params.timeoutMs}ms`))
+      );
+    }, params.timeoutMs);
+
+    const handleChunk = (chunk: Buffer, isError: boolean) => {
+      for (const line of sanitize(chunk.toString("utf8")).split(/\r?\n/)) {
+        if (line.trim()) pendingLogs.push(params.onLine(line, isError));
+      }
+    };
+
+    child.stdout?.on("data", (d: Buffer) => handleChunk(d, false));
+    child.stderr?.on("data", (d: Buffer) => handleChunk(d, true));
+    child.on("error", (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      void Promise.allSettled(pendingLogs).then(() => reject(err));
+    });
+    child.on("close", (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      void Promise.allSettled(pendingLogs).then(() => {
+        if (code !== 0) {
+          reject(new DeterministicBuildError(`Git clone exited with status code ${code}`));
+        } else {
+          resolve();
+        }
+      });
+    });
+  });
+}
+
 function buildDockerCommand(params: {
   stage: "install" | "build";
   workDir: string;
@@ -208,6 +298,8 @@ function buildDockerCommand(params: {
   cpus: string;
   memory: string;
 }): string {
+  const allowedVersions = new Set(["18", "20", "22", "24"]);
+  const safeNode = allowedVersions.has(params.nodeVersion) ? params.nodeVersion : "20";
   const networkFlag = params.stage === "build" ? "--network=none" : "--network=bridge";
   const escaped = params.innerCommand.replace(/"/g, '\\"');
   return [
@@ -221,7 +313,7 @@ function buildDockerCommand(params: {
     networkFlag,
     `-v "${params.workDir}:/app"`,
     "-w /app",
-    `node:${params.nodeVersion}-alpine`,
+    `node:${safeNode}-alpine`,
     `sh -c "${escaped}"`,
   ].join(" ");
 }
@@ -327,7 +419,11 @@ export async function executeDeploymentLifecycle(
       await logger.log("clone", "info", `Copying source snapshot into isolated sandbox...`);
       await fs.cp(options.localSourceOverrideDir, repoDir, { recursive: true });
     } else {
-      let gitCloneUrl = project.repo_url || `https://github.com/${project.repo_full_name}.git`;
+      if (!project.repo_full_name || !isValidRepoFullName(project.repo_full_name)) {
+        throw new DeterministicBuildError("Invalid or missing GitHub repository identifier.");
+      }
+      const safeBranch = sanitizeGitBranchName(branch);
+      let gitCloneUrl = `https://github.com/${project.repo_full_name.trim()}.git`;
       if (project.github_connection_id) {
         const { data: conn } = await admin
           .from("github_connections")
@@ -344,17 +440,18 @@ export async function executeDeploymentLifecycle(
               .eq("id", conn.id);
           });
           redactTokens.push(token);
-          gitCloneUrl = `https://x-access-token:${token}@github.com/${project.repo_full_name}.git`;
+          gitCloneUrl = `https://x-access-token:${token}@github.com/${project.repo_full_name.trim()}.git`;
         }
       }
 
       await logger.log(
         "clone",
         "info",
-        `Cloning ${project.repo_full_name} (branch: ${branch}) into isolated workspace...`
+        `Cloning ${project.repo_full_name} (branch: ${safeBranch}) into isolated workspace...`
       );
-      await runIsolatedCommand({
-        command: `git clone --depth 1 --branch "${branch}" "${gitCloneUrl}" repo`,
+      await runGitCloneIsolated({
+        branch: safeBranch,
+        cloneUrl: gitCloneUrl,
         cwd: workspaceDir,
         env: minimalSysEnv,
         timeoutMs: 60_000,

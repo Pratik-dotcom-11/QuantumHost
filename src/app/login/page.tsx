@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, Github, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeRelativeRedirectPath } from "@/lib/security/redirect";
 import { QuantumLogo } from "@/components/motion/quantum-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const nextPath = searchParams.get("next") || "/dashboard";
+  const nextPath = sanitizeRelativeRedirectPath(searchParams.get("next"), "/dashboard");
   const initialError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
@@ -74,7 +75,7 @@ function LoginForm() {
         return;
       }
       toast({ title: "Signed in", description: "Welcome back to QuantumHost.", variant: "success" });
-      router.push(nextPath.startsWith("/") ? nextPath : "/dashboard");
+      router.push(sanitizeRelativeRedirectPath(nextPath, "/dashboard"));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in.");

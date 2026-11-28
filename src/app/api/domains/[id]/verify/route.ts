@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { getPublicEnv } from "@/lib/env";
 import { verifyDomainAndSsl } from "@/lib/hosting/domains";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 
 export async function POST(
   _request: Request,
@@ -10,6 +11,9 @@ export async function POST(
   const { id } = await context.params;
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`domain-verify:${user.id}`, 20, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   const { data: domainRow } = await supabase
     .from("custom_domains")

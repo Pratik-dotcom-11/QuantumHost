@@ -6,6 +6,7 @@ import { getPublicEnv } from "@/lib/env";
 import { getLatestCommit, resolveConnectionToken } from "@/lib/github/client";
 import { buildDeploymentHostingUrls } from "@/lib/hosting/urls";
 import { enqueueBuildJob } from "@/lib/queue/bullmq";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 
 const createDeploymentSchema = z.object({
   projectId: z.string().uuid(),
@@ -46,6 +47,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`deploy:${user.id}`, 15, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   let body: unknown;
   try {

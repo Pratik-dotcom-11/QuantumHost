@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getServerSupabaseServiceKey } from "@/lib/env";
 import { runHttpProbe } from "@/lib/monitoring/prober";
@@ -5,11 +6,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
+function verifyBearerSecret(authHeader: string | null, secret: string): boolean {
+  if (!authHeader || !secret) return false;
+  const expected = `Bearer ${secret}`;
+  if (authHeader.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+}
+
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET?.trim();
   const authHeader = request.headers.get("authorization");
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (cronSecret && !verifyBearerSecret(authHeader, cronSecret)) {
     return NextResponse.json({ error: "Unauthorized cron invocation" }, { status: 401 });
   }
 

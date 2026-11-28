@@ -242,13 +242,13 @@ describe("Phase 7 Five Core Product Features", () => {
     const addr = server.address();
     if (!addr || typeof addr === "string") throw new Error("Failed to bind test HTTP server");
 
-    const okProbe = await runHttpProbe(`http://127.0.0.1:${addr.port}/ok`);
+    const okProbe = await runHttpProbe(`http://127.0.0.1:${addr.port}/ok`, { allowLoopback: true });
     expect(okProbe.status).toBe("up");
     expect(okProbe.httpStatus).toBe(200);
     expect(okProbe.latencyMs).toBeGreaterThanOrEqual(0);
     expect(okProbe.errorMessage).toBeNull();
 
-    const failProbe = await runHttpProbe(`http://127.0.0.1:${addr.port}/fail`);
+    const failProbe = await runHttpProbe(`http://127.0.0.1:${addr.port}/fail`, { allowLoopback: true });
     expect(failProbe.status).toBe("down");
     expect(failProbe.httpStatus).toBe(502);
     expect(failProbe.errorMessage).toBe("HTTP 502");

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { decryptSecret, encryptSecret, maskSecret } from "@/lib/crypto";
+import { assertSafeOutboundHttpUrl } from "@/lib/security/url-safety";
 
 const updateAiSchema = z.object({
   provider: z.enum(["gemini", "openai", "anthropic", "openai_compatible"]),
@@ -71,6 +72,17 @@ export async function PUT(request: Request) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
+  }
+
+  if (parsed.data.baseUrl && parsed.data.baseUrl.trim()) {
+    try {
+      await assertSafeOutboundHttpUrl(parsed.data.baseUrl, { requireHttps: true });
+    } catch (ssrfErr) {
+      return NextResponse.json(
+        { error: ssrfErr instanceof Error ? ssrfErr.message : "Invalid AI endpoint URL" },
+        { status: 400 }
+      );
+    }
   }
 
   const { data: existing } = await supabase

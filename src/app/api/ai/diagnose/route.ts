@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { decryptSecret } from "@/lib/crypto";
 import { runBuildDiagnosis } from "@/lib/ai/provider";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 import type { AiProviderType, Json } from "@/types/database";
 
 const diagnoseSchema = z.object({
@@ -12,6 +13,9 @@ const diagnoseSchema = z.object({
 export async function POST(request: Request) {
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`ai-diagnose:${user.id}`, 10, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   let body: unknown;
   try {

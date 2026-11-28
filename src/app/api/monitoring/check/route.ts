@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { runHttpProbe } from "@/lib/monitoring/prober";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 
 const checkSchema = z.object({
   monitorId: z.string().uuid().optional(),
@@ -10,6 +11,9 @@ const checkSchema = z.object({
 export async function POST(request: Request) {
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`monitor-probe:${user.id}`, 20, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   let body: unknown = {};
   try {

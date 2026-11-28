@@ -1,3 +1,6 @@
+import { getPublicEnv } from "@/lib/env";
+import { assertSafeOutboundHttpUrl } from "@/lib/security/url-safety";
+
 export interface HttpProbeOutcome {
   status: "up" | "degraded" | "down";
   httpStatus: number | null;
@@ -5,12 +8,30 @@ export interface HttpProbeOutcome {
   errorMessage: string | null;
 }
 
-export async function runHttpProbe(targetUrl: string): Promise<HttpProbeOutcome> {
+function isSameOriginAsControlPlane(targetUrl: string): boolean {
+  try {
+    const appOrigin = new URL(getPublicEnv().appUrl).origin;
+    return new URL(targetUrl).origin === appOrigin;
+  } catch {
+    return false;
+  }
+}
+
+export async function runHttpProbe(
+  targetUrl: string,
+  options: { allowLoopback?: boolean } = {}
+): Promise<HttpProbeOutcome> {
   const started = Date.now();
   try {
+    const allowSameAppOrigin = isSameOriginAsControlPlane(targetUrl);
+    await assertSafeOutboundHttpUrl(targetUrl, {
+      allowLoopback: options.allowLoopback || allowSameAppOrigin,
+      skipDnsResolution: options.allowLoopback || allowSameAppOrigin,
+    });
+
     const res = await fetch(targetUrl, {
       method: "GET",
-      redirect: "follow",
+      redirect: "manual",
       signal: AbortSignal.timeout(10_000),
       headers: {
         "User-Agent": "QuantumHost-UptimeProbe/1.0",

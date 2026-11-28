@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { getPublicEnv } from "@/lib/env";
 import { registerDomainWithProvider, removeDomainFromProvider } from "@/lib/hosting/domains";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 
 const createDomainSchema = z.object({
   projectId: z.string().uuid(),
@@ -39,6 +40,9 @@ export async function GET() {
 export async function POST(request: Request) {
   const { supabase, user, unauthorizedResponse } = await requireApiUser();
   if (unauthorizedResponse || !user) return unauthorizedResponse!;
+
+  const rl = checkRateLimit(`domain-add:${user.id}`, 15, 60_000);
+  if (!rl.allowed) return rateLimitExceededResponse(rl);
 
   let body: unknown;
   try {
