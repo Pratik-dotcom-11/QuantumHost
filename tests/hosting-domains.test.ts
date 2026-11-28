@@ -299,6 +299,22 @@ describe("Phase 6 Hosting, Routing, Rollback & Domain Verification", () => {
         platformDomain: null,
       })
     ).toEqual({ kind: "control-plane" });
+
+    expect(
+      parseHostingHost({
+        hostHeader: "quantumhost.vercel.app",
+        appUrl: "http://localhost:3000",
+        platformDomain: null,
+      })
+    ).toEqual({ kind: "control-plane" });
+
+    expect(
+      parseHostingHost({
+        hostHeader: "quantum-host-git-main-pratik.vercel.app, localhost:3000",
+        appUrl: "https://custom-control-plane.example",
+        platformDomain: "quantumhost.app",
+      })
+    ).toEqual({ kind: "control-plane" });
   });
 
   it("selects modular hosting provider adapters cleanly and honors Cloudflare API responses", async () => {

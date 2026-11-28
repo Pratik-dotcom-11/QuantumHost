@@ -83,7 +83,8 @@ export function getCnameTargetHost(appUrl: string): string {
 }
 
 function stripPort(hostHeader: string): string {
-  const trimmed = hostHeader.trim().toLowerCase();
+  const firstHost = hostHeader.split(",")[0] ?? hostHeader;
+  const trimmed = firstHost.trim().toLowerCase();
   if (trimmed.startsWith("[")) {
     const endBracket = trimmed.indexOf("]");
     return endBracket !== -1 ? trimmed.slice(0, endBracket + 1) : trimmed;
@@ -160,8 +161,20 @@ export function parseHostingHost(params: {
     return { kind: "production-slug", slug: label };
   }
 
-  // Treat Vercel deployment preview hostnames without subdomain prefix as control plane
-  if (host.endsWith(".vercel.app") && (!appHostname || host === appHostname)) {
+  const vercelHosts = [
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ]
+    .filter((v): v is string => Boolean(v?.trim()))
+    .map((v) => stripPort(v));
+
+  if (vercelHosts.includes(host)) {
+    return { kind: "control-plane" };
+  }
+
+  // Any Vercel deployment hostname serves the QuantumHost control plane
+  if (host === "vercel.app" || host.endsWith(".vercel.app")) {
     return { kind: "control-plane" };
   }
 

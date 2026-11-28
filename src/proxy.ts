@@ -28,7 +28,7 @@ async function rewriteTenantHost(request: NextRequest): Promise<NextResponse | n
 
   const { appUrl } = getPublicEnv();
   const parsed = parseHostingHost({
-    hostHeader: request.headers.get("host"),
+    hostHeader: request.headers.get("x-forwarded-host") || request.headers.get("host"),
     appUrl,
   });
 
@@ -83,10 +83,13 @@ async function rewriteTenantHost(request: NextRequest): Promise<NextResponse | n
     .contains("verified_domains", [parsed.domain])
     .maybeSingle();
 
+  if (!customRoute?.slug) {
+    // Only intercept hostnames explicitly verified in published_routes; allow unknown control-plane hosts through
+    return null;
+  }
+
   const rewriteUrl = request.nextUrl.clone();
-  rewriteUrl.pathname = customRoute?.slug
-    ? `/sites/${customRoute.slug}${suffixPath}`
-    : `/sites/__unconfigured__`;
+  rewriteUrl.pathname = `/sites/${customRoute.slug}${suffixPath}`;
   return NextResponse.rewrite(rewriteUrl);
 }
 
