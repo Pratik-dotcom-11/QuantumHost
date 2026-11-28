@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@fontsource-variable/el-messiri";
 import "@fontsource-variable/outfit";
 import "@fontsource-variable/jetbrains-mono";
+import { MotionRoot } from "@/components/motion/motion-root";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-[#0b0907] font-sans text-[#f7f3ec] antialiased selection:bg-[#f4ba4a]/25 selection:text-[#f7f3ec]">
-        <ToastProvider>{children}</ToastProvider>
+        <MotionRoot>
+          <ToastProvider>{children}</ToastProvider>
+        </MotionRoot>
       </body>
     </html>
   );

@@ -13,7 +13,11 @@ export function DeploymentStatusBadge({ status }: { status: string }) {
     case "building":
     case "uploading":
       return (
-        <Badge variant="default">
+        <Badge variant="default" className="relative overflow-hidden">
+          <span
+            aria-hidden="true"
+            className="mr-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[#f4ba4a] animate-ping"
+          />
           <Loader2 className="h-3 w-3 animate-spin" />
           {status === "uploading" ? "Uploading" : "Building"}
         </Badge>
@@ -21,6 +25,10 @@ export function DeploymentStatusBadge({ status }: { status: string }) {
     case "queued":
       return (
         <Badge variant="warning">
+          <span
+            aria-hidden="true"
+            className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"
+          />
           <Clock className="h-3 w-3" />
           Queued
         </Badge>
@@ -48,7 +56,10 @@ export function UptimeStatusBadge({ status }: { status: string }) {
     case "up":
       return (
         <Badge variant="success">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="relative flex h-2 w-2 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-65 animate-ping" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          </span>
           Operational
         </Badge>
       );

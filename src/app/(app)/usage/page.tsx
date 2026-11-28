@@ -1,6 +1,12 @@
 import { Clock, Cpu, Database, Globe, Sparkles } from "lucide-react";
 import { requirePageUser } from "@/lib/auth";
 import { formatBytes } from "@/lib/utils";
+import {
+  AnimatedCounter,
+  SpotlightCard,
+  StaggerGroup,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -82,57 +88,83 @@ export default async function UsagePage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Build Compute</CardDescription>
-            <Clock className="h-4 w-4 text-[#f4ba4a]" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{buildSeconds.toFixed(1)}s</div>
-          </CardContent>
-        </Card>
+      <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" viewport={false} stagger={0.055}>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>Build Compute</CardDescription>
+                <Clock className="h-4 w-4 text-[#f4ba4a]" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">
+                  <AnimatedCounter value={buildSeconds} decimals={1} suffix="s" />
+                </div>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Artifact Storage</CardDescription>
-            <Database className="h-4 w-4 text-emerald-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(storageBytes)}</div>
-          </CardContent>
-        </Card>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>Artifact Storage</CardDescription>
+                <Database className="h-4 w-4 text-emerald-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(storageBytes)}</div>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Bandwidth Served</CardDescription>
-            <Globe className="h-4 w-4 text-[#f4ba4a]" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(bandwidthBytes)}</div>
-          </CardContent>
-        </Card>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>Bandwidth Served</CardDescription>
+                <Globe className="h-4 w-4 text-[#f4ba4a]" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(bandwidthBytes)}</div>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>HTTP Requests</CardDescription>
-            <Cpu className="h-4 w-4 text-amber-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{httpRequests.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>HTTP Requests</CardDescription>
+                <Cpu className="h-4 w-4 text-amber-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">
+                  <AnimatedCounter value={httpRequests} locale />
+                </div>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>AI Tokens</CardDescription>
-            <Sparkles className="h-4 w-4 text-[#f4ba4a]" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-xl font-bold text-[#f7f3ec]">{aiTokens.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-      </div>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>AI Tokens</CardDescription>
+                <Sparkles className="h-4 w-4 text-[#f4ba4a]" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">
+                  <AnimatedCounter value={aiTokens} locale />
+                </div>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
+      </StaggerGroup>
 
       <Card>
         <CardHeader>

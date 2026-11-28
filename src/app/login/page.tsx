@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, Cpu, Github, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Github, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { QuantumLogo } from "@/components/motion/quantum-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -89,8 +90,8 @@ function LoginForm() {
 
       <Card className="relative z-10 w-full max-w-md border-[#2a231b] bg-[#14110e]/95 shadow-2xl shadow-black/60 backdrop-blur-md">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-[#d49b4b]/35 bg-[#2a1d0e]/75 text-[#f4ba4a]">
-            <Cpu className="h-5 w-5" />
+          <div className="mx-auto flex justify-center">
+            <QuantumLogo size="md" showText={false} />
           </div>
           <CardTitle className="text-xl font-medium text-[#f7f3ec]">Sign in to QuantumHost</CardTitle>
           <CardDescription>

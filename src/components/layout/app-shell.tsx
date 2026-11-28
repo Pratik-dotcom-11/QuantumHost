@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Activity,
   BarChart3,
@@ -18,6 +19,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { PageTransition } from "@/components/motion/primitives";
+import { QuantumLogo } from "@/components/motion/quantum-logo";
+import { QH_EASE } from "@/components/motion/tokens";
 
 interface NavItem {
   href: string;
@@ -43,21 +47,14 @@ interface AppShellProps {
 
 export function AppShell({ userEmail, userName, children }: AppShellProps) {
   const pathname = usePathname();
+  const reduced = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b border-[#221c16] px-5">
-        <Link
-          href="/dashboard"
-          className="flex flex-col leading-none transition-opacity hover:opacity-90"
-        >
-          <span className="font-display text-lg font-semibold tracking-normal text-[#f7f3ec]">
-            QuantumHost
-          </span>
-          <span className="font-sans text-[8px] font-light uppercase tracking-[0.28em] text-[#d49b4b]">
-            Deploy Beyond Limits
-          </span>
+        <Link href="/dashboard" className="transition-opacity hover:opacity-90">
+          <QuantumLogo size="sm" showText showTagline />
         </Link>
       </div>
 
@@ -73,12 +70,19 @@ export function AppShell({ userEmail, userName, children }: AppShellProps) {
               href={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs font-medium transition-colors",
-                isActive
-                  ? "border border-[#d49b4b]/35 bg-[#2a1d0e]/70 text-[#f4ba4a]"
-                  : "text-[#9a9084] hover:bg-[#191410] hover:text-[#f7f3ec]"
+                "relative flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs font-medium transition-colors",
+                isActive ? "text-[#f4ba4a]" : "text-[#9a9084] hover:bg-[#191410] hover:text-[#f7f3ec]"
               )}
             >
+              {isActive && !reduced ? (
+                <motion.span
+                  layoutId="sidebar-active-nav"
+                  transition={{ duration: 0.24, ease: QH_EASE }}
+                  className="absolute inset-0 -z-10 rounded-full border border-[#d49b4b]/35 bg-[#2a1d0e]/70"
+                />
+              ) : isActive ? (
+                <span className="absolute inset-0 -z-10 rounded-full border border-[#d49b4b]/35 bg-[#2a1d0e]/70" />
+              ) : null}
               <Icon className="h-4 w-4 shrink-0" />
               {item.label}
             </Link>
@@ -121,25 +125,37 @@ export function AppShell({ userEmail, userName, children }: AppShellProps) {
       </aside>
 
       {/* Mobile Drawer */}
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="relative z-10 w-64 border-r border-[#26201a] bg-[#100d0a]">
-            <button
-              type="button"
+      <AnimatePresence>
+        {mobileOpen ? (
+          <div className="fixed inset-0 z-50 flex lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
               onClick={() => setMobileOpen(false)}
-              className="absolute right-3 top-4 rounded-full p-1 text-[#9a9084] hover:text-[#f7f3ec] cursor-pointer"
-              aria-label="Close navigation"
+            />
+            <motion.aside
+              initial={reduced ? undefined : { x: -260 }}
+              animate={{ x: 0 }}
+              exit={reduced ? undefined : { x: -260 }}
+              transition={{ duration: 0.24, ease: QH_EASE }}
+              className="relative z-10 w-64 border-r border-[#26201a] bg-[#100d0a]"
             >
-              <X className="h-5 w-5" />
-            </button>
-            {sidebarContent}
-          </aside>
-        </div>
-      ) : null}
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="absolute right-3 top-4 rounded-full p-1 text-[#9a9084] hover:text-[#f7f3ec] cursor-pointer"
+                aria-label="Close navigation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              {sidebarContent}
+            </motion.aside>
+          </div>
+        ) : null}
+      </AnimatePresence>
 
       {/* Main Content */}
       <div className="flex min-w-0 flex-1 flex-col">
@@ -169,7 +185,9 @@ export function AppShell({ userEmail, userName, children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 p-4 lg:p-8">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 p-4 lg:p-8">
+          <PageTransition routeKey={pathname}>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );

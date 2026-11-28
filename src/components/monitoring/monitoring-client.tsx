@@ -3,6 +3,12 @@
 import React, { useState } from "react";
 import { Activity, Loader2, Play, RefreshCw } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
+import {
+  AnimatedCounter,
+  SpotlightCard,
+  StaggerGroup,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { UptimeStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,7 +123,7 @@ export function MonitoringClient({
           description="Monitors are automatically provisioned whenever you create or import a project."
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <StaggerGroup className="grid gap-4 md:grid-cols-2" viewport={false} stagger={0.06}>
           {monitors.map((monitor) => {
             const proj = projectMap.get(monitor.project_id);
             const recent = checks
@@ -126,92 +132,100 @@ export function MonitoringClient({
               .reverse();
 
             return (
-              <Card key={monitor.id}>
-                <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="truncate">{proj?.name || "Project"}</CardTitle>
-                      <UptimeStatusBadge status={monitor.last_status} />
-                    </div>
-                    <CardDescription className="mt-1 truncate font-mono text-xs">
-                      {monitor.target_url}
-                    </CardDescription>
-                  </div>
-                  <Switch
-                    checked={monitor.is_enabled}
-                    onCheckedChange={(val) => toggleEnabled(monitor, val)}
-                  />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3 text-xs">
-                    <div>
-                      <p className="text-muted-foreground">HTTP Status</p>
-                      <p className="mt-0.5 font-mono font-semibold text-foreground">
-                        {monitor.last_http_status ?? "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Latency</p>
-                      <p className="mt-0.5 font-mono font-semibold text-foreground">
-                        {monitor.last_latency_ms !== null ? `${monitor.last_latency_ms} ms` : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Last Checked</p>
-                      <p className="mt-0.5 font-mono text-foreground">
-                        {formatRelativeTime(monitor.last_checked_at)}
-                      </p>
-                    </div>
-                  </div>
+              <StaggerItem key={monitor.id}>
+                <SpotlightCard>
+                  <Card className="border-0 bg-transparent shadow-none">
+                    <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="truncate">{proj?.name || "Project"}</CardTitle>
+                          <UptimeStatusBadge status={monitor.last_status} />
+                        </div>
+                        <CardDescription className="mt-1 truncate font-mono text-xs">
+                          {monitor.target_url}
+                        </CardDescription>
+                      </div>
+                      <Switch
+                        checked={monitor.is_enabled}
+                        onCheckedChange={(val) => toggleEnabled(monitor, val)}
+                      />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3 text-xs">
+                        <div>
+                          <p className="text-muted-foreground">HTTP Status</p>
+                          <p className="mt-0.5 font-mono font-semibold text-foreground">
+                            {monitor.last_http_status ?? "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Latency</p>
+                          <p className="mt-0.5 font-mono font-semibold text-foreground">
+                            {monitor.last_latency_ms !== null ? (
+                              <AnimatedCounter value={monitor.last_latency_ms} suffix=" ms" />
+                            ) : (
+                              "—"
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Last Checked</p>
+                          <p className="mt-0.5 font-mono text-foreground">
+                            {formatRelativeTime(monitor.last_checked_at)}
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Mini uptime bar strip */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>Recent probe history</span>
-                      <span>{recent.length} checks</span>
-                    </div>
-                    <div className="flex h-6 items-center gap-1">
-                      {recent.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">No probes executed yet.</span>
-                      ) : (
-                        recent.map((c) => (
-                          <div
-                            key={c.id}
-                            title={`${c.status.toUpperCase()} · HTTP ${c.http_status ?? "ERR"} · ${
-                              c.latency_ms ?? 0
-                            }ms`}
-                            className={`h-full flex-1 rounded-xs ${
-                              c.status === "up"
-                                ? "bg-emerald-400/80"
-                                : c.status === "degraded"
-                                ? "bg-amber-400/80"
-                                : "bg-rose-500/80"
-                            }`}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
+                      {/* Mini uptime bar strip */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>Recent probe history</span>
+                          <span>{recent.length} checks</span>
+                        </div>
+                        <div className="flex h-6 items-center gap-1">
+                          {recent.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">No probes executed yet.</span>
+                          ) : (
+                            recent.map((c) => (
+                              <div
+                                key={c.id}
+                                title={`${c.status.toUpperCase()} · HTTP ${c.http_status ?? "ERR"} · ${
+                                  c.latency_ms ?? 0
+                                }ms`}
+                                className={`h-full flex-1 rounded-xs transition-transform duration-150 hover:scale-y-110 ${
+                                  c.status === "up"
+                                    ? "bg-emerald-400/80"
+                                    : c.status === "degraded"
+                                    ? "bg-amber-400/80"
+                                    : "bg-rose-500/80"
+                                }`}
+                              />
+                            ))
+                          )}
+                        </div>
+                      </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => runCheck(monitor.id)}
-                    disabled={runningId !== null}
-                  >
-                    {runningId === monitor.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Play className="h-3.5 w-3.5" />
-                    )}
-                    Probe Endpoint Now
-                  </Button>
-                </CardContent>
-              </Card>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => runCheck(monitor.id)}
+                        disabled={runningId !== null}
+                      >
+                        {runningId === monitor.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Play className="h-3.5 w-3.5" />
+                        )}
+                        Probe Endpoint Now
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </SpotlightCard>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerGroup>
       )}
     </div>
   );

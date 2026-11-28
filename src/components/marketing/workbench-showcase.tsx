@@ -1,9 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { ArrowUp, ArrowUpRight, ChevronRight, FileCode2, Sparkles, User } from "lucide-react";
+import { QH_EASE } from "@/components/motion/tokens";
 
 interface Scenario {
   id: string;
@@ -30,7 +38,7 @@ const SCENARIOS: Scenario[] = [
     previewNav: ["Overview", "Domains", "Telemetry"],
     previewHeading: "Deploy something\nthat scales.",
     rows: [
-      { label: "Isolated Worker", meta: "BullMQ · 12.4s" },
+      { label: "Isolated Worker", meta: "BullMQ · Sandbox" },
       { label: "Artifact Edge", meta: "R2 · ap-south-1" },
     ],
     cta: "Launch deployment",
@@ -67,10 +75,19 @@ export const pipeline = {
 ];
 
 export function WorkbenchShowcase({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
   const [activeTab, setActiveTab] = useState<"preview" | "code">("preview");
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [promptInput, setPromptInput] = useState("");
   const scenario = SCENARIOS[scenarioIdx] ?? SCENARIOS[0]!;
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "center center"],
+  });
+  const frameY = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [22, 0]);
+  const frameScale = useTransform(scrollYProgress, [0, 1], reduced ? [1, 1] : [0.985, 1]);
 
   function handlePromptSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,24 +96,37 @@ export function WorkbenchShowcase({ isAuthenticated }: { isAuthenticated: boolea
   }
 
   return (
-    <section id="workbench" className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pb-24">
+    <section
+      id="workbench"
+      ref={containerRef}
+      className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pb-24"
+    >
       {/* Split Header matching Reference "FROM A PROMPT TO A PREVIEW / Your idea, taking shape." */}
-      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <motion.div
+        initial={!reduced ? { opacity: 0, y: 16 } : undefined}
+        whileInView={!reduced ? { opacity: 1, y: 0 } : undefined}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 0.5, ease: QH_EASE }}
+        className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+      >
         <div>
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#9a9084]">
             From Git Push to Production
           </p>
-          <h2 className="font-display mt-2 text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec] sm:text-[34px]">
+          <h2 className="font-display mt-2 text-2xl font-medium tracking-[-0.015em] text-[#f7f3ec] sm:text-[34px]">
             Your deployment, taking shape.
           </h2>
         </div>
         <p className="max-w-[210px] text-xs leading-relaxed text-[#8e857b] sm:text-right">
           Push from your repository. Refine and roll back as you go.
         </p>
-      </div>
+      </motion.div>
 
-      {/* Main Workbench Window Frame */}
-      <div className="overflow-hidden rounded-2xl border border-[#272019] bg-[#120f0c] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
+      {/* Main Workbench Window Frame with subtle depth transform */}
+      <motion.div
+        style={{ y: frameY, scale: frameScale }}
+        className="overflow-hidden rounded-2xl border border-[#272019] bg-[#120f0c] shadow-[0_28px_90px_rgba(0,0,0,0.7)]"
+      >
         {/* Top Window Chrome */}
         <div className="flex items-center justify-between border-b border-[#221c16] bg-[#16120e] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2 text-xs">
@@ -112,32 +142,32 @@ export function WorkbenchShowcase({ isAuthenticated }: { isAuthenticated: boolea
             aria-label="Workbench view mode"
             className="inline-flex items-center rounded-full border border-[#2a231b] bg-[#0b0907] p-0.5"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "preview"}
-              onClick={() => setActiveTab("preview")}
-              className={`rounded-full px-3.5 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
-                activeTab === "preview"
-                  ? "bg-[#3a3025] text-[#f7f3ec]"
-                  : "text-[#8e857b] hover:text-[#f7f3ec]"
-              }`}
-            >
-              Preview
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "code"}
-              onClick={() => setActiveTab("code")}
-              className={`rounded-full px-3.5 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
-                activeTab === "code"
-                  ? "bg-[#3a3025] text-[#f7f3ec]"
-                  : "text-[#8e857b] hover:text-[#f7f3ec]"
-              }`}
-            >
-              Code
-            </button>
+            {(["preview", "code"] as const).map((tab) => {
+              const selected = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActiveTab(tab)}
+                  className={`relative z-10 rounded-full px-3.5 py-1 text-[11px] font-medium capitalize transition-colors cursor-pointer ${
+                    selected ? "text-[#f7f3ec]" : "text-[#8e857b] hover:text-[#f7f3ec]"
+                  }`}
+                >
+                  {selected && !reduced ? (
+                    <motion.span
+                      layoutId="workbench-tab-pill"
+                      transition={{ duration: 0.22, ease: QH_EASE }}
+                      className="absolute inset-0 -z-10 rounded-full bg-[#3a3025]"
+                    />
+                  ) : selected ? (
+                    <span className="absolute inset-0 -z-10 rounded-full bg-[#3a3025]" />
+                  ) : null}
+                  {tab}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -145,45 +175,56 @@ export function WorkbenchShowcase({ isAuthenticated }: { isAuthenticated: boolea
         <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-12">
           {/* Left Timeline & Prompt Pane */}
           <div className="flex flex-col justify-between gap-4 lg:col-span-5">
-            <div className="space-y-4">
-              {/* User Trigger Row */}
-              <div className="flex items-center gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#2d261e] bg-[#1d1813] text-[#c8bfb2]">
-                  <User className="h-3.5 w-3.5" />
-                </div>
-                <div className="flex-1 rounded-xl border border-[#26201a] bg-[#181410] px-3.5 py-2.5 text-xs text-[#dfd8ce]">
-                  {scenario.prompt}
-                </div>
-              </div>
-
-              {/* Assistant / Build Worker Response */}
-              <div className="flex items-start gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f4ba4a] text-[11px] font-bold text-[#110d08]">
-                  Q
-                </div>
-                <div className="flex-1 space-y-2.5 pt-0.5">
-                  <p className="text-xs text-[#dfd8ce]">{scenario.reply}</p>
-                  <div className="space-y-2">
-                    {scenario.files.map((file) => (
-                      <button
-                        key={file}
-                        type="button"
-                        onClick={() => setActiveTab(activeTab === "preview" ? "code" : "preview")}
-                        className="flex w-full items-center gap-2.5 rounded-xl border border-[#26201a] bg-[#181410] px-3.5 py-2.5 text-left font-mono text-xs text-[#d6cfc5] transition-colors hover:border-[#d49b4b]/45 cursor-pointer"
-                      >
-                        <FileCode2 className="h-3.5 w-3.5 text-[#9a9084]" />
-                        {file}
-                      </button>
-                    ))}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={scenario.id}
+                initial={!reduced ? { opacity: 0, y: 8 } : undefined}
+                animate={!reduced ? { opacity: 1, y: 0 } : undefined}
+                exit={!reduced ? { opacity: 0, y: -6 } : undefined}
+                transition={{ duration: 0.25, ease: QH_EASE }}
+                className="space-y-4"
+              >
+                {/* User Trigger Row */}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#2d261e] bg-[#1d1813] text-[#c8bfb2]">
+                    <User className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 rounded-xl border border-[#26201a] bg-[#181410] px-3.5 py-2.5 text-xs text-[#dfd8ce]">
+                    {scenario.prompt}
                   </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Assistant / Build Worker Response */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f4ba4a] text-[11px] font-bold text-[#110d08]">
+                    Q
+                  </div>
+                  <div className="flex-1 space-y-2.5 pt-0.5">
+                    <p className="text-xs text-[#dfd8ce]">{scenario.reply}</p>
+                    <div className="space-y-2">
+                      {scenario.files.map((file) => (
+                        <button
+                          key={file}
+                          type="button"
+                          onClick={() =>
+                            setActiveTab(activeTab === "preview" ? "code" : "preview")
+                          }
+                          className="flex w-full items-center gap-2.5 rounded-xl border border-[#26201a] bg-[#181410] px-3.5 py-2.5 text-left font-mono text-xs text-[#d6cfc5] transition-colors hover:border-[#d49b4b]/45 cursor-pointer"
+                        >
+                          <FileCode2 className="h-3.5 w-3.5 text-[#9a9084]" />
+                          {file}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
 
             {/* Bottom Prompt / Switch Input */}
             <form
               onSubmit={handlePromptSubmit}
-              className="flex items-center justify-between rounded-xl border border-[#29221b] bg-[#181410] py-1.5 pl-3.5 pr-1.5"
+              className="flex items-center justify-between rounded-xl border border-[#29221b] bg-[#181410] py-1.5 pl-3.5 pr-1.5 transition-colors focus-within:border-[#f4ba4a]/50"
             >
               <input
                 type="text"
@@ -205,90 +246,106 @@ export function WorkbenchShowcase({ isAuthenticated }: { isAuthenticated: boolea
 
           {/* Right High-Contrast Cream Preview Card or Code Pane */}
           <div className="lg:col-span-7">
-            {activeTab === "preview" ? (
-              <div className="flex h-full flex-col justify-between rounded-xl bg-[#f6f2ea] p-5 text-[#14110e] shadow-inner sm:p-6">
-                {/* Mini Preview Navbar */}
-                <div className="flex items-center justify-between border-b border-[#e4ddd1] pb-3.5">
-                  <span className="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[#14110e]">
-                    {scenario.previewBrand}
-                  </span>
-                  <div className="flex items-center gap-4 text-[10px] font-medium text-[#6e665c]">
-                    {scenario.previewNav.map((nav) => (
-                      <span key={nav}>{nav}</span>
-                    ))}
-                    <Sparkles className="h-3 w-3 text-[#14110e]" />
-                  </div>
-                </div>
-
-                {/* Interior Two-Column Layout matching Reference Clay Studio Card */}
-                <div className="mt-5 grid items-center gap-5 sm:grid-cols-12">
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#e7dfd3] sm:col-span-6">
-                    <Image
-                      src="/images/workbench-studio.jpg"
-                      alt="QuantumHost modular edge compute architecture"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <div className="space-y-3 sm:col-span-6">
-                    <h3 className="font-display whitespace-pre-line text-xl font-medium leading-[1.15] tracking-[-0.025em] text-[#14110e] sm:text-2xl">
-                      {scenario.previewHeading}
-                    </h3>
-
-                    <div className="space-y-2 pt-1">
-                      {scenario.rows.map((row) => (
-                        <div
-                          key={row.label}
-                          className="flex items-center justify-between rounded-full border border-[#ded6c9] bg-[#faf7f2] px-3.5 py-2 text-[11px]"
-                        >
-                          <span className="font-medium text-[#14110e]">{row.label}</span>
-                          <span className="flex items-center gap-1 text-[#787066]">
-                            <span className="font-mono text-[10px]">{row.meta}</span>
-                            <ChevronRight className="h-3 w-3" />
-                          </span>
-                        </div>
+            <AnimatePresence mode="wait">
+              {activeTab === "preview" ? (
+                <motion.div
+                  key={`preview-${scenario.id}`}
+                  initial={!reduced ? { opacity: 0, y: 8 } : undefined}
+                  animate={!reduced ? { opacity: 1, y: 0 } : undefined}
+                  exit={!reduced ? { opacity: 0, y: -6 } : undefined}
+                  transition={{ duration: 0.25, ease: QH_EASE }}
+                  className="flex h-full flex-col justify-between rounded-xl bg-[#f6f2ea] p-5 text-[#14110e] shadow-inner sm:p-6"
+                >
+                  {/* Mini Preview Navbar */}
+                  <div className="flex items-center justify-between border-b border-[#e4ddd1] pb-3.5">
+                    <span className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-[#14110e]">
+                      {scenario.previewBrand}
+                    </span>
+                    <div className="flex items-center gap-4 text-[10px] font-medium text-[#6e665c]">
+                      {scenario.previewNav.map((nav) => (
+                        <span key={nav}>{nav}</span>
                       ))}
-                    </div>
-
-                    <div className="pt-1">
-                      <Link
-                        href={isAuthenticated ? "/projects/new" : "/register"}
-                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#f4ba4a] px-5 py-2.5 text-xs font-medium text-[#110d08] transition-colors hover:bg-[#f7c86b]"
-                      >
-                        {scenario.cta}
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                      </Link>
+                      <Sparkles className="h-3 w-3 text-[#14110e]" />
                     </div>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex h-full min-h-[290px] flex-col justify-between rounded-xl border border-[#26201a] bg-[#0b0907] p-5 font-mono text-xs text-[#dfd8ce]">
-                <div className="flex items-center justify-between border-b border-[#221c16] pb-3 text-[11px] text-[#9a9084]">
-                  <span>{scenario.files[0]}</span>
-                  <span className="rounded-full border border-[#d49b4b]/35 bg-[#2a1d0e]/70 px-2.5 py-0.5 text-[10px] text-[#f4ba4a]">
-                    TypeScript
-                  </span>
-                </div>
-                <pre className="my-4 overflow-x-auto leading-relaxed text-[#e7dfd3]">
-                  <code>{scenario.codeSnippet}</code>
-                </pre>
-                <div className="flex items-center justify-between border-t border-[#221c16] pt-3 text-[11px] text-[#8e857b]">
-                  <span>Template preview — connect your repo in Console</span>
-                  <button
-                    type="button"
-                    onClick={() => setScenarioIdx((prev) => (prev === 0 ? 1 : 0))}
-                    className="text-[#f4ba4a] hover:underline cursor-pointer"
-                  >
-                    Switch template →
-                  </button>
-                </div>
-              </div>
-            )}
+
+                  {/* Interior Two-Column Layout matching Reference Clay Studio Card */}
+                  <div className="mt-5 grid items-center gap-5 sm:grid-cols-12">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#e7dfd3] sm:col-span-6">
+                      <Image
+                        src="/images/workbench-studio.jpg"
+                        alt="QuantumHost modular edge compute architecture"
+                        fill
+                        className="object-cover transition-transform duration-500 hover:scale-[1.03]"
+                      />
+                    </div>
+
+                    <div className="space-y-3 sm:col-span-6">
+                      <h3 className="font-display whitespace-pre-line text-xl font-medium leading-[1.15] tracking-[-0.015em] text-[#14110e] sm:text-2xl">
+                        {scenario.previewHeading}
+                      </h3>
+
+                      <div className="space-y-2 pt-1">
+                        {scenario.rows.map((row) => (
+                          <div
+                            key={row.label}
+                            className="flex items-center justify-between rounded-full border border-[#ded6c9] bg-[#faf7f2] px-3.5 py-2 text-[11px] transition-colors hover:border-[#c8963e]/50"
+                          >
+                            <span className="font-medium text-[#14110e]">{row.label}</span>
+                            <span className="flex items-center gap-1 text-[#787066]">
+                              <span className="font-mono text-[10px]">{row.meta}</span>
+                              <ChevronRight className="h-3 w-3" />
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-1">
+                        <Link
+                          href={isAuthenticated ? "/projects/new" : "/register"}
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#f4ba4a] px-5 py-2.5 text-xs font-medium text-[#110d08] transition-all hover:bg-[#f7c86b] active:scale-[0.985]"
+                        >
+                          {scenario.cta}
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={`code-${scenario.id}`}
+                  initial={!reduced ? { opacity: 0, y: 8 } : undefined}
+                  animate={!reduced ? { opacity: 1, y: 0 } : undefined}
+                  exit={!reduced ? { opacity: 0, y: -6 } : undefined}
+                  transition={{ duration: 0.25, ease: QH_EASE }}
+                  className="flex h-full min-h-[290px] flex-col justify-between rounded-xl border border-[#26201a] bg-[#0b0907] p-5 font-mono text-xs text-[#dfd8ce]"
+                >
+                  <div className="flex items-center justify-between border-b border-[#221c16] pb-3 text-[11px] text-[#9a9084]">
+                    <span>{scenario.files[0]}</span>
+                    <span className="rounded-full border border-[#d49b4b]/35 bg-[#2a1d0e]/70 px-2.5 py-0.5 text-[10px] text-[#f4ba4a]">
+                      TypeScript
+                    </span>
+                  </div>
+                  <pre className="my-4 overflow-x-auto leading-relaxed text-[#e7dfd3]">
+                    <code>{scenario.codeSnippet}</code>
+                  </pre>
+                  <div className="flex items-center justify-between border-t border-[#221c16] pt-3 text-[11px] text-[#8e857b]">
+                    <span>Simulated preview — connect your repo in Console</span>
+                    <button
+                      type="button"
+                      onClick={() => setScenarioIdx((prev) => (prev === 0 ? 1 : 0))}
+                      className="text-[#f4ba4a] hover:underline cursor-pointer"
+                    >
+                      Switch template →
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

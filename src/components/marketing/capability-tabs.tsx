@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { QH_EASE } from "@/components/motion/tokens";
 
 const CAPABILITIES = [
   {
@@ -35,6 +37,7 @@ const CAPABILITIES = [
 
 export function CapabilityTabs() {
   const [activeId, setActiveId] = useState("deploy");
+  const reduced = useReducedMotion();
   const current = CAPABILITIES.find((c) => c.id === activeId) ?? CAPABILITIES[0]!;
 
   return (
@@ -55,25 +58,42 @@ export function CapabilityTabs() {
                 {cap.eyebrow}
               </p>
               <p
-                className={`font-display mt-1.5 text-xl font-medium tracking-[-0.025em] sm:text-2xl ${
+                className={`font-display mt-1.5 text-xl font-medium tracking-[-0.012em] sm:text-2xl ${
                   isActive ? "text-[#f7f3ec]" : "text-[#9a9084]"
                 }`}
               >
                 {cap.title}
               </p>
-              <div
-                className={`mt-3 h-0.5 w-12 rounded-full transition-all ${
-                  isActive ? "bg-[#f4ba4a]" : "bg-transparent"
-                }`}
-              />
+              <div className="mt-3 h-0.5 w-12">
+                {isActive ? (
+                  reduced ? (
+                    <div className="h-full w-full rounded-full bg-[#f4ba4a]" />
+                  ) : (
+                    <motion.div
+                      layoutId="capability-underline"
+                      transition={{ duration: 0.28, ease: QH_EASE }}
+                      className="h-full w-full rounded-full bg-[#f4ba4a]"
+                    />
+                  )
+                ) : null}
+              </div>
             </button>
           );
         })}
       </div>
 
-      <p className="max-w-xl text-sm leading-relaxed text-[#a89e91]">
-        {current.description}
-      </p>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={current.id}
+          initial={!reduced ? { opacity: 0, y: 6 } : undefined}
+          animate={!reduced ? { opacity: 1, y: 0 } : undefined}
+          exit={!reduced ? { opacity: 0, y: -4 } : undefined}
+          transition={{ duration: 0.22, ease: QH_EASE }}
+          className="max-w-xl text-sm leading-relaxed text-[#a89e91]"
+        >
+          {current.description}
+        </motion.p>
+      </AnimatePresence>
     </div>
   );
 }

@@ -13,6 +13,12 @@ import {
 import { getAuthenticatedUser } from "@/lib/auth";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
+import {
+  ScrollReveal,
+  SpotlightCard,
+  StaggerGroup,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,7 +82,7 @@ export default async function DocsPage() {
       <PublicHeader isAuthenticated={Boolean(user)} />
 
       <main className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
-        <div className="max-w-3xl">
+        <ScrollReveal className="max-w-3xl">
           <Badge>
             <BookOpen className="h-3.5 w-3.5" />
             QuantumHost Documentation
@@ -88,31 +94,36 @@ export default async function DocsPage() {
             Explore the technical specifications, API contracts, security boundaries, and deployment
             workflows powering QuantumHost.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3" viewport={false} stagger={0.055}>
           {DOC_SECTIONS.map((doc) => {
             const Icon = doc.icon;
             return (
-              <Card key={doc.id} id={doc.id}>
-                <CardHeader>
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[#d49b4b]/30 bg-[#2a1d0e]/70 text-[#f4ba4a]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <CardTitle>{doc.title}</CardTitle>
-                  <CardDescription className="font-mono text-[11px] text-[#f4ba4a]">
-                    {doc.file}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs leading-relaxed text-[#9a9084]">{doc.summary}</p>
-                </CardContent>
-              </Card>
+              <StaggerItem key={doc.id} className="flex">
+                <SpotlightCard className="w-full">
+                  <Card id={doc.id} className="h-full border-0 bg-transparent shadow-none">
+                    <CardHeader>
+                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[#d49b4b]/30 bg-[#2a1d0e]/70 text-[#f4ba4a]">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <CardTitle>{doc.title}</CardTitle>
+                      <CardDescription className="font-mono text-[11px] text-[#f4ba4a]">
+                        {doc.file}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs leading-relaxed text-[#9a9084]">{doc.summary}</p>
+                    </CardContent>
+                  </Card>
+                </SpotlightCard>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerGroup>
 
-        <div className="relative mt-12 overflow-hidden rounded-3xl border border-[#2c2319] bg-[#14110e] p-8 text-[#f7f3ec] shadow-2xl">
+        <ScrollReveal className="mt-12">
+          <div className="relative overflow-hidden rounded-3xl border border-[#2c2319] bg-[#14110e] p-8 text-[#f7f3ec] shadow-2xl">
           <div className="qh-amber-glow pointer-events-none absolute inset-0" />
           <div className="relative z-10">
             <div className="flex items-center gap-2 text-base font-medium text-[#f7f3ec]">
@@ -159,7 +170,8 @@ export default async function DocsPage() {
               </Button>
             </div>
           </div>
-        </div>
+          </div>
+        </ScrollReveal>
       </main>
       <PublicFooter />
     </div>

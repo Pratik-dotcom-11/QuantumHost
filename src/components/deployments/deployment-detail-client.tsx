@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
+import { DeploymentPipeline } from "@/components/motion/deployment-pipeline";
+import { QH_EASE } from "@/components/motion/tokens";
 import { DeploymentStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -292,6 +295,9 @@ export function DeploymentDetailClient({
         </div>
       ) : null}
 
+      {/* Live Deployment Pipeline Visualization driven by real status */}
+      <DeploymentPipeline mode="real" status={deployment.status} />
+
       {/* Metadata Cards */}
       <div className="grid gap-4 sm:grid-cols-4">
         <Card>
@@ -326,42 +332,74 @@ export function DeploymentDetailClient({
         </Card>
       </div>
 
-      {/* AI Diagnosis Panel */}
-      {deployment.ai_diagnosis ? (
-        <Card className="border-[#d49b4b]/40 bg-[#1a140d]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-[#f4ba4a]">
-                <Sparkles className="h-4 w-4" />
-                AI Build Failure Diagnosis
-              </CardTitle>
-              <span className="font-mono text-xs text-[#9a9084]">
-                {deployment.ai_diagnosis.provider} / {deployment.ai_diagnosis.model} · confidence:{" "}
-                {deployment.ai_diagnosis.confidence}
-              </span>
-            </div>
-            <CardDescription>{deployment.ai_diagnosis.summary}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9084]">
-                Root Cause
-              </p>
-              <p className="mt-1 text-[#f7f3ec]">{deployment.ai_diagnosis.rootCause}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9084]">
-                Suggested Fixes
-              </p>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-[#e7dfd3]">
-                {deployment.ai_diagnosis.suggestedFixes.map((fix, idx) => (
-                  <li key={idx}>{fix}</li>
-                ))}
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      {/* AI Copilot Loading State & Diagnosis Panel */}
+      <AnimatePresence mode="wait">
+        {diagnosing ? (
+          <motion.div
+            key="ai-diagnosing"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25, ease: QH_EASE }}
+          >
+            <Card className="border-[#d49b4b]/45 bg-[#1a140d]">
+              <CardContent className="flex items-center gap-3 py-5">
+                <Sparkles className="h-4 w-4 text-[#f4ba4a]" />
+                <span className="text-xs font-medium text-[#edd19a]">
+                  QuantumHost Copilot is analyzing build logs and dependency trace
+                </span>
+                <span className="inline-flex gap-1" aria-hidden="true">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#f4ba4a] animate-bounce [animation-delay:-0.2s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#f4ba4a] animate-bounce [animation-delay:-0.1s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#f4ba4a] animate-bounce" />
+                </span>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : deployment.ai_diagnosis ? (
+          <motion.div
+            key="ai-diagnosis-ready"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: QH_EASE }}
+          >
+            <Card className="border-[#d49b4b]/40 bg-[#1a140d]">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-[#f4ba4a]">
+                    <Sparkles className="h-4 w-4" />
+                    AI Build Failure Diagnosis
+                  </CardTitle>
+                  <span className="font-mono text-xs text-[#9a9084]">
+                    {deployment.ai_diagnosis.provider} / {deployment.ai_diagnosis.model} · confidence:{" "}
+                    {deployment.ai_diagnosis.confidence}
+                  </span>
+                </div>
+                <CardDescription>{deployment.ai_diagnosis.summary}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9084]">
+                    Root Cause
+                  </p>
+                  <p className="mt-1 text-[#f7f3ec]">{deployment.ai_diagnosis.rootCause}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#9a9084]">
+                    Suggested Fixes
+                  </p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-[#e7dfd3]">
+                    {deployment.ai_diagnosis.suggestedFixes.map((fix, idx) => (
+                      <li key={idx}>{fix}</li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {/* Build Logs Terminal */}
       <Card>

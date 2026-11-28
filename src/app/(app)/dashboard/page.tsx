@@ -15,6 +15,12 @@ import {
 import { requirePageUser } from "@/lib/auth";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
 import { QuickDeployButton } from "@/components/dashboard/quick-deploy-button";
+import {
+  AnimatedCounter,
+  SpotlightCard,
+  StaggerGroup,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { DeploymentStatusBadge, UptimeStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,69 +149,87 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Projects</CardDescription>
-            <Boxes className="h-4 w-4 text-[#f4ba4a]" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-2xl font-bold text-[#f7f3ec]">{totalProjects}</div>
-            <p className="mt-1 text-xs text-[#9a9084]">
-              {activeCount} serving active live URLs
-            </p>
-          </CardContent>
-        </Card>
+      <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" viewport={false} stagger={0.055}>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>Total Projects</CardDescription>
+                <Boxes className="h-4 w-4 text-[#f4ba4a]" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-2xl font-bold text-[#f7f3ec]">
+                  <AnimatedCounter value={totalProjects} />
+                </div>
+                <p className="mt-1 text-xs text-[#9a9084]">
+                  {activeCount} serving active live URLs
+                </p>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Successful Deployments</CardDescription>
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-2xl font-bold text-emerald-400">
-              {successfulDeployments}
-            </div>
-            <p className="mt-1 text-xs text-[#9a9084]">
-              {totalDeployments > 0 ? `${successRate}% build success rate` : "No builds run yet"}
-            </p>
-          </CardContent>
-        </Card>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>Successful Deployments</CardDescription>
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-2xl font-bold text-emerald-400">
+                  <AnimatedCounter value={successfulDeployments} />
+                </div>
+                <p className="mt-1 text-xs text-[#9a9084]">
+                  {totalDeployments > 0 ? `${successRate}% build success rate` : "No builds run yet"}
+                </p>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Failed Deployments</CardDescription>
-            <XCircle className="h-4 w-4 text-rose-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-2xl font-bold text-rose-400">
-              {failedDeployments}
-            </div>
-            <p className="mt-1 text-xs text-[#9a9084]">
-              {inProgressDeployments > 0
-                ? `${inProgressDeployments} currently queued/building`
-                : "AI failure diagnostics ready"}
-            </p>
-          </CardContent>
-        </Card>
+        <StaggerItem>
+          <SpotlightCard className="h-full">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription>Failed Deployments</CardDescription>
+                <XCircle className="h-4 w-4 text-rose-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-2xl font-bold text-rose-400">
+                  <AnimatedCounter value={failedDeployments} />
+                </div>
+                <p className="mt-1 text-xs text-[#9a9084]">
+                  {inProgressDeployments > 0
+                    ? `${inProgressDeployments} currently queued/building`
+                    : "AI failure diagnostics ready"}
+                </p>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
 
-        <Card className="border-[#d49b4b]/40 bg-[#18130d]">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription className="text-[#edd19a]">Website Health</CardDescription>
-            <Activity className="h-4 w-4 text-[#f4ba4a]" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-mono text-2xl font-bold text-[#f7f3ec]">
-              {monitorsUp}/{monitorList.length}
-            </div>
-            <p className="mt-1 text-xs text-[#9a9084]">
-              {avgLatencyMs !== null
-                ? `Avg probe latency ${avgLatencyMs} ms`
-                : `${monitorsDegraded} degraded · ${monitorsDown} down`}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <StaggerItem>
+          <SpotlightCard className="h-full border-[#d49b4b]/40 bg-[#18130d]">
+            <Card className="h-full border-0 bg-transparent shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription className="text-[#edd19a]">Website Health</CardDescription>
+                <Activity className="h-4 w-4 text-[#f4ba4a]" />
+              </CardHeader>
+              <CardContent>
+                <div className="font-mono text-2xl font-bold text-[#f7f3ec]">
+                  <AnimatedCounter value={monitorsUp} />/{monitorList.length}
+                </div>
+                <p className="mt-1 text-xs text-[#9a9084]">
+                  {avgLatencyMs !== null
+                    ? `Avg probe latency ${avgLatencyMs} ms`
+                    : `${monitorsDegraded} degraded · ${monitorsDown} down`}
+                </p>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
+        </StaggerItem>
+      </StaggerGroup>
 
       {/* Deployment Status Distribution + Resource Usage */}
       <div className="grid gap-6 lg:grid-cols-2">
