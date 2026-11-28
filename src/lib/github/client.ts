@@ -112,6 +112,7 @@ export interface GitHubUserProfile {
   login: string;
   avatar_url: string;
   name: string | null;
+  email?: string | null;
 }
 
 export async function verifyGitHubToken(token: string): Promise<GitHubUserProfile> {
@@ -126,6 +127,30 @@ export async function verifyGitHubToken(token: string): Promise<GitHubUserProfil
   }
 
   return (await res.json()) as GitHubUserProfile;
+}
+
+interface GitHubEmailRecord {
+  email: string;
+  primary: boolean;
+  verified: boolean;
+}
+
+export async function fetchGitHubPrimaryEmail(token: string): Promise<string | null> {
+  const res = await fetch(`${GITHUB_API_BASE}/user/emails`, {
+    headers: githubHeaders(token),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    return null;
+  }
+
+  const emails = (await res.json()) as GitHubEmailRecord[];
+  const primaryVerified = emails.find((item) => item.primary && item.verified);
+  if (primaryVerified) return primaryVerified.email;
+
+  const anyVerified = emails.find((item) => item.verified);
+  return anyVerified?.email ?? null;
 }
 
 export interface GitHubRepoSummary {

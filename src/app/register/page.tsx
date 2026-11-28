@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { GithubAuthButton } from "@/components/auth/github-auth-button";
 import { QuantumLogo } from "@/components/motion/quantum-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationSent, setConfirmationSent] = useState(false);
 
@@ -110,48 +112,65 @@ export default function RegisterPage() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleRegister} className="space-y-3.5">
-              <div className="space-y-1.5">
-                <Label htmlFor="fullName">Full name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Ada Lovelace"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
+            <>
+              <GithubAuthButton
+                nextPath="/dashboard"
+                disabled={loading}
+                onError={setError}
+                onLoadingChange={setOauthLoading}
+              />
+
+              <div className="relative flex items-center py-1">
+                <div className="grow border-t border-[#26201a]" />
+                <span className="mx-3 text-[11px] uppercase tracking-wider text-[#7c7369]">
+                  or email
+                </span>
+                <div className="grow border-t border-[#26201a]" />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="ada@quantumhost.dev"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Minimum 8 characters"
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Create Account
-              </Button>
-            </form>
+
+              <form onSubmit={handleRegister} className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName">Full name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Ada Lovelace"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="ada@quantumhost.dev"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Minimum 8 characters"
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || oauthLoading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Create Account
+                </Button>
+              </form>
+            </>
           )}
 
           <p className="text-center text-xs text-[#9a9084]">

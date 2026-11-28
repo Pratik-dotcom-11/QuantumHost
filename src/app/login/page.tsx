@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, Github, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { sanitizeRelativeRedirectPath } from "@/lib/security/redirect";
+import { createClient } from "@/lib/supabase/client";
+import { GithubAuthButton } from "@/components/auth/github-auth-button";
 import { QuantumLogo } from "@/components/motion/quantum-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +14,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 
+function mapAuthErrorMessage(rawError: string | null): string | null {
+  if (!rawError) return null;
+  if (rawError === "github_setup_required") {
+    return "GitHub OAuth is not enabled in your Supabase project yet. Follow the setup guide to enable it.";
+  }
+  if (rawError === "github_invalid_state") {
+    return "GitHub authentication session expired or state mismatch. Please try signing in again.";
+  }
+  if (rawError === "github_email_required") {
+    return "Your GitHub account must have a verified primary email address to sign in.";
+  }
+  if (rawError === "auth_callback_failed") {
+    return "Authentication callback failed. Please try signing in again.";
+  }
+  return rawError;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const nextPath = sanitizeRelativeRedirectPath(searchParams.get("next"), "/dashboard");
   const initialError = searchParams.get("error");
+  const shouldOpenSetup = Boolean(
+    initialError &&
+      (initialError === "github_setup_required" ||
+        initialError.toLowerCase().includes("unsupported provider") ||
+        initialError.toLowerCase().includes("provider is not enabled"))
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,9 +50,7 @@ function LoginForm() {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [resetSending, setResetSending] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [error, setError] = useState<string | null>(
-    initialError ? "Authentication callback failed. Please try signing in again." : null
-  );
+  const [error, setError] = useState<string | null>(mapAuthErrorMessage(initialError));
 
   async function handlePasswordReset() {
     setError(null);
@@ -84,29 +106,6 @@ function LoginForm() {
     }
   }
 
-  async function handleGitHubLogin() {
-    setError(null);
-    setOauthLoading(true);
-    try {
-      const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "github",
-        options: {
-          redirectTo,
-          scopes: "read:user user:email repo",
-        },
-      });
-      if (oauthError) {
-        setError(oauthError.message);
-        setOauthLoading(false);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "GitHub OAuth failed.");
-      setOauthLoading(false);
-    }
-  }
-
   return (
     <div className="qh-grid-subtle relative flex min-h-screen flex-col items-center justify-center bg-[#0b0907] px-4 py-12 text-[#f7f3ec]">
       <div className="qh-amber-glow pointer-events-none absolute inset-0" />
@@ -146,20 +145,13 @@ function LoginForm() {
             </div>
           ) : null}
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGitHubLogin}
-            disabled={oauthLoading || loading}
-          >
-            {oauthLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Github className="h-4 w-4" />
-            )}
-            Continue with GitHub
-          </Button>
+          <GithubAuthButton
+            nextPath={nextPath}
+            disabled={loading}
+            initialOpenSetup={shouldOpenSetup}
+            onError={setError}
+            onLoadingChange={setOauthLoading}
+          />
 
           <div className="relative flex items-center py-1">
             <div className="grow border-t border-[#26201a]" />
