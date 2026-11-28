@@ -4,7 +4,12 @@ import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { encryptSecret } from "@/lib/crypto";
 import { getPublicEnv } from "@/lib/env";
-import { registerRepoWebhook, resolveConnectionToken } from "@/lib/github/client";
+import {
+  getRepositoryMetadata,
+  isValidRepoFullName,
+  registerRepoWebhook,
+  resolveConnectionToken,
+} from "@/lib/github/client";
 import { slugify } from "@/lib/utils";
 
 const createProjectSchema = z.object({
@@ -67,16 +72,58 @@ export async function POST(request: Request) {
   const input = parsed.data;
   const normalizedSlug = slugify(input.slug || input.name);
 
+  if (input.repoFullName && !isValidRepoFullName(input.repoFullName)) {
+    return NextResponse.json(
+      { error: "Invalid repository identifier. Use owner/repository format." },
+      { status: 400 }
+    );
+  }
+
+  let connectionToken: string | null = null;
+  let verifiedRepoId = input.repoId ?? null;
+  let verifiedRepoUrl = input.repoUrl ?? null;
+
   if (input.githubConnectionId) {
     const { data: conn } = await supabase
       .from("github_connections")
-      .select("id")
+      .select("id, provider_type, installation_id, encrypted_access_token, token_expires_at")
       .eq("id", input.githubConnectionId)
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!conn) {
       return NextResponse.json({ error: "Selected GitHub connection not found" }, { status: 404 });
+    }
+
+    if (input.repoFullName) {
+      try {
+        connectionToken = await resolveConnectionToken(conn, async (encryptedToken, expiresAt) => {
+          await supabase
+            .from("github_connections")
+            .update({ encrypted_access_token: encryptedToken, token_expires_at: expiresAt })
+            .eq("id", conn.id)
+            .eq("user_id", user.id);
+        });
+        const repoMeta = await getRepositoryMetadata(connectionToken, input.repoFullName);
+        if (repoMeta.permissions?.pull === false) {
+          return NextResponse.json(
+            { error: "Your connected GitHub account lacks read permissions for this repository." },
+            { status: 403 }
+          );
+        }
+        verifiedRepoId = repoMeta.id;
+        verifiedRepoUrl = repoMeta.html_url;
+      } catch (err) {
+        return NextResponse.json(
+          {
+            error:
+              err instanceof Error
+                ? err.message
+                : "Unable to verify GitHub repository ownership or permissions.",
+          },
+          { status: 403 }
+        );
+      }
     }
   }
 
@@ -92,9 +139,9 @@ export async function POST(request: Request) {
       slug: normalizedSlug,
       description: input.description?.trim() || null,
       framework: input.framework,
-      repo_full_name: input.repoFullName ?? null,
-      repo_id: input.repoId ?? null,
-      repo_url: input.repoUrl ?? null,
+      repo_full_name: input.repoFullName?.trim() ?? null,
+      repo_id: verifiedRepoId,
+      repo_url: verifiedRepoUrl,
       default_branch: input.defaultBranch.trim(),
       root_directory: input.rootDirectory.trim(),
       install_command: input.installCommand.trim(),

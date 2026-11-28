@@ -53,6 +53,7 @@ export default async function SettingsPage() {
         }}
         initialConnections={connections ?? []}
         oauthConfigured={Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)}
+        appSlug={process.env.GITHUB_APP_SLUG?.trim() || null}
         initialAiConfig={{
           provider: (aiRow?.provider || process.env.AI_PROVIDER || "gemini") as AiProviderType,
           model: aiRow?.model || process.env.AI_MODEL || "gemini-2.5-flash",

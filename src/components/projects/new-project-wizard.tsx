@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  AlertTriangle,
   Github,
   Loader2,
   Rocket,
+  Search,
   Sparkles,
 } from "lucide-react";
 import { FRAMEWORK_PRESETS } from "@/lib/frameworks";
@@ -33,6 +35,7 @@ interface RepoItem {
   private: boolean;
   html_url: string;
   default_branch: string;
+  description: string | null;
   language: string | null;
 }
 
@@ -44,13 +47,16 @@ export function NewProjectWizard({
   const router = useRouter();
   const [selectedConnId, setSelectedConnId] = useState(connections[0]?.id ?? "");
   const [repos, setRepos] = useState<RepoItem[]>([]);
+  const [repoSearch, setRepoSearch] = useState("");
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<RepoItem | null>(null);
   const [branches, setBranches] = useState<string[]>(["main"]);
   const [detecting, setDetecting] = useState(false);
+  const [compatibilityNote, setCompatibilityNote] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
   const [repoFullName, setRepoFullName] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [defaultBranch, setDefaultBranch] = useState("main");
@@ -93,59 +99,78 @@ export function NewProjectWizard({
     };
   }, [selectedConnId]);
 
+  async function inspectRepoTarget(targetRepoFullName: string, targetBranch?: string, connId?: string) {
+    setDetecting(true);
+    setError(null);
+    setCompatibilityNote(null);
+    try {
+      const inspectRes = await fetch("/api/github/inspect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          connectionId: connId || null,
+          repoFullName: targetRepoFullName,
+          branch: targetBranch,
+          rootDirectory,
+        }),
+      });
+      const json = (await inspectRes.json()) as {
+        preset?: {
+          id: FrameworkType;
+          installCommand: string;
+          buildCommand: string;
+          outputDirectory: string;
+        };
+        branches?: string[];
+        metadata?: {
+          name: string;
+          full_name: string;
+          html_url: string;
+          default_branch: string;
+          description: string | null;
+        };
+        compatibilityNote?: string | null;
+        error?: string;
+      };
+
+      if (!inspectRes.ok) {
+        throw new Error(json.error || "Unable to inspect repository");
+      }
+
+      if (json.metadata) {
+        setRepoFullName(json.metadata.full_name);
+        setRepoUrl(json.metadata.html_url);
+        if (!name) setName(json.metadata.name);
+        if (!slug) setSlug(slugify(json.metadata.name));
+        if (json.metadata.description) setDescription(json.metadata.description);
+        setDefaultBranch(targetBranch || json.metadata.default_branch || "main");
+      }
+      if (json.branches?.length) setBranches(json.branches);
+      if (json.preset) {
+        setFramework(json.preset.id);
+        setInstallCommand(json.preset.installCommand);
+        setBuildCommand(json.preset.buildCommand);
+        setOutputDirectory(json.preset.outputDirectory);
+      }
+      setCompatibilityNote(json.compatibilityNote ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Repository inspection failed");
+    } finally {
+      setDetecting(false);
+    }
+  }
+
   async function handleSelectRepo(repo: RepoItem) {
     setSelectedRepo(repo);
     setName(repo.name);
     setSlug(slugify(repo.name));
+    setDescription(repo.description ?? "");
     setRepoFullName(repo.full_name);
     setRepoUrl(repo.html_url);
     setDefaultBranch(repo.default_branch || "main");
     setRegisterWebhook(true);
 
-    if (!selectedConnId) return;
-    setDetecting(true);
-    try {
-      const [branchRes, inspectRes] = await Promise.all([
-        fetch(
-          `/api/github/repos?connectionId=${encodeURIComponent(selectedConnId)}&repo=${encodeURIComponent(
-            repo.full_name
-          )}`
-        ),
-        fetch("/api/github/inspect", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            connectionId: selectedConnId,
-            repoFullName: repo.full_name,
-            branch: repo.default_branch || "main",
-            rootDirectory,
-          }),
-        }),
-      ]);
-
-      if (branchRes.ok) {
-        const bJson = (await branchRes.json()) as { branches?: string[] };
-        if (bJson.branches?.length) setBranches(bJson.branches);
-      }
-      if (inspectRes.ok) {
-        const iJson = (await inspectRes.json()) as {
-          preset?: {
-            id: FrameworkType;
-            installCommand: string;
-            buildCommand: string;
-            outputDirectory: string;
-          };
-        };
-        if (iJson.preset) {
-          setFramework(iJson.preset.id);
-          setInstallCommand(iJson.preset.installCommand);
-          setBuildCommand(iJson.preset.buildCommand);
-          setOutputDirectory(iJson.preset.outputDirectory);
-        }
-      }
-    } finally {
-      setDetecting(false);
-    }
+    await inspectRepoTarget(repo.full_name, repo.default_branch || "main", selectedConnId);
   }
 
   function handleFrameworkChange(next: FrameworkType) {
@@ -167,10 +192,11 @@ export function NewProjectWizard({
         body: JSON.stringify({
           name,
           slug: slug || slugify(name),
+          description: description.trim() || null,
           githubConnectionId: selectedConnId || null,
-          repoFullName: repoFullName || null,
+          repoFullName: repoFullName.trim() || null,
           repoId: selectedRepo?.id ?? null,
-          repoUrl: repoUrl || (repoFullName ? `https://github.com/${repoFullName}` : null),
+          repoUrl: repoUrl || (repoFullName ? `https://github.com/${repoFullName.trim()}` : null),
           framework,
           defaultBranch,
           rootDirectory,
@@ -198,6 +224,16 @@ export function NewProjectWizard({
     }
   }
 
+  const normalizedQuery = repoSearch.trim().toLowerCase();
+  const visibleRepos = normalizedQuery
+    ? repos.filter(
+        (r) =>
+          r.full_name.toLowerCase().includes(normalizedQuery) ||
+          (r.description || "").toLowerCase().includes(normalizedQuery) ||
+          (r.language || "").toLowerCase().includes(normalizedQuery)
+      )
+    : repos;
+
   return (
     <div className="grid gap-6 lg:grid-cols-5">
       {/* Left: GitHub Repository Picker */}
@@ -208,7 +244,7 @@ export function NewProjectWizard({
             Import Git Repository
           </CardTitle>
           <CardDescription>
-            Select a repository from a connected GitHub account or enter a public repo manually.
+            Select a repository from a connected GitHub account or inspect any public repository.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -229,6 +265,18 @@ export function NewProjectWizard({
                 </Select>
               </div>
 
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#7c7369]" />
+                <Input
+                  type="search"
+                  placeholder="Search repositories..."
+                  value={repoSearch}
+                  onChange={(e) => setRepoSearch(e.target.value)}
+                  className="pl-9"
+                  aria-label="Search repositories"
+                />
+              </div>
+
               {loadingRepos ? (
                 <div className="flex items-center gap-2 py-8 text-xs text-[#9a9084]">
                   <Loader2 className="h-4 w-4 animate-spin text-[#f4ba4a]" />
@@ -236,7 +284,7 @@ export function NewProjectWizard({
                 </div>
               ) : (
                 <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
-                  {repos.map((repo) => {
+                  {visibleRepos.map((repo) => {
                     const active = selectedRepo?.id === repo.id;
                     return (
                       <button
@@ -263,9 +311,11 @@ export function NewProjectWizard({
                       </button>
                     );
                   })}
-                  {repos.length === 0 ? (
+                  {visibleRepos.length === 0 ? (
                     <p className="py-4 text-xs text-muted-foreground">
-                      No repositories returned for this connection.
+                      {repos.length === 0
+                        ? "No repositories returned for this connection."
+                        : `No repositories matching "${repoSearch}".`}
                     </p>
                   ) : null}
                 </div>
@@ -275,8 +325,9 @@ export function NewProjectWizard({
             <div className="space-y-3 rounded-xl border border-dashed border-[#2d261f] bg-[#0f0c0a] p-4 text-xs text-[#9a9084]">
               <p>No GitHub accounts connected yet.</p>
               <p>
-                You can connect GitHub in Settings for private repositories and auto-webhooks, or enter
-                a public repository path (e.g. <code className="text-[#f4ba4a]">owner/repo</code>) on the right.
+                Connect GitHub in Settings for private repositories and auto-webhooks, or enter
+                a public repository path (e.g. <code className="text-[#f4ba4a]">owner/repo</code>) on
+                the right and click Inspect.
               </p>
               <Button asChild variant="outline" size="sm">
                 <Link href="/settings">Connect GitHub Account</Link>
@@ -299,7 +350,7 @@ export function NewProjectWizard({
             {detecting ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-[#f4ba4a]">
                 <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                Inspecting package.json...
+                Inspecting repository...
               </span>
             ) : null}
           </div>
@@ -310,6 +361,13 @@ export function NewProjectWizard({
               <div className="flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{error}</span>
+              </div>
+            ) : null}
+
+            {compatibilityNote ? (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-xs text-amber-200">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                <span>{compatibilityNote}</span>
               </div>
             ) : null}
 
@@ -339,16 +397,39 @@ export function NewProjectWizard({
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-desc">Description (optional)</Label>
+              <Input
+                id="proj-desc"
+                placeholder="Static site or frontend web app"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="repo-full">GitHub Repository (owner/repo)</Label>
-                <Input
-                  id="repo-full"
-                  placeholder="vercel/next.js"
-                  value={repoFullName}
-                  onChange={(e) => setRepoFullName(e.target.value)}
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="repo-full"
+                    placeholder="Pratik-dotcom-11/QuantumHost"
+                    value={repoFullName}
+                    onChange={(e) => setRepoFullName(e.target.value)}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!repoFullName.trim() || detecting}
+                    onClick={() =>
+                      inspectRepoTarget(repoFullName.trim(), undefined, selectedConnId || undefined)
+                    }
+                  >
+                    Inspect
+                  </Button>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="branch">Production Branch</Label>
@@ -451,7 +532,7 @@ export function NewProjectWizard({
                 <div>
                   <p className="text-sm font-medium">Auto-deploy on Git Push</p>
                   <p className="text-xs text-muted-foreground">
-                    Automatically trigger builds when commits land via webhook.
+                    Automatically trigger builds when push or PR webhooks arrive.
                   </p>
                 </div>
                 <Switch checked={autoDeploy} onCheckedChange={setAutoDeploy} />
@@ -462,7 +543,7 @@ export function NewProjectWizard({
                   <div>
                     <p className="text-sm font-medium">Register GitHub Repository Webhook</p>
                     <p className="text-xs text-muted-foreground">
-                      Calls GitHub API to attach a push webhook signed with HMAC-SHA256.
+                      Calls GitHub API to attach a push/PR webhook signed with HMAC-SHA256.
                     </p>
                   </div>
                   <Switch checked={registerWebhook} onCheckedChange={setRegisterWebhook} />

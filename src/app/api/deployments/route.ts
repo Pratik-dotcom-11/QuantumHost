@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { getPublicEnv } from "@/lib/env";
+import { getLatestCommit, resolveConnectionToken } from "@/lib/github/client";
 import { enqueueBuildJob } from "@/lib/queue/bullmq";
 
 const createDeploymentSchema = z.object({
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, slug, default_branch, repo_full_name")
+    .select("id, slug, default_branch, repo_full_name, github_connection_id")
     .eq("id", parsed.data.projectId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -79,6 +80,35 @@ export async function POST(request: Request) {
 
   const branch = parsed.data.branch?.trim() || project.default_branch;
 
+  let resolvedCommitSha = parsed.data.commitSha ?? null;
+  let resolvedCommitMessage = parsed.data.commitMessage ?? null;
+  let resolvedAuthor = user.email ?? "developer";
+
+  if (!resolvedCommitSha) {
+    try {
+      let token: string | null = null;
+      if (project.github_connection_id) {
+        const { data: conn } = await supabase
+          .from("github_connections")
+          .select("id, provider_type, installation_id, encrypted_access_token, token_expires_at")
+          .eq("id", project.github_connection_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (conn) {
+          token = await resolveConnectionToken(conn);
+        }
+      }
+      const commit = await getLatestCommit(token, project.repo_full_name, branch);
+      if (commit) {
+        resolvedCommitSha = commit.sha;
+        resolvedCommitMessage = resolvedCommitMessage ?? commit.message;
+        resolvedAuthor = commit.authorLogin || commit.authorName || resolvedAuthor;
+      }
+    } catch {
+      // Fall back gracefully if commit lookup is unavailable
+    }
+  }
+
   const { data: deployment, error: insertError } = await supabase
     .from("deployments")
     .insert({
@@ -88,9 +118,9 @@ export async function POST(request: Request) {
       environment: parsed.data.environment,
       trigger_source: "manual",
       git_branch: branch,
-      git_commit_sha: parsed.data.commitSha ?? null,
-      git_commit_message: parsed.data.commitMessage ?? `Manual deployment of ${branch}`,
-      git_author: user.email ?? "developer",
+      git_commit_sha: resolvedCommitSha,
+      git_commit_message: resolvedCommitMessage ?? `Manual deployment of ${branch}`,
+      git_author: resolvedAuthor,
     })
     .select("id, deployment_number, status, environment, git_branch, created_at")
     .single();

@@ -45,12 +45,14 @@ export function SettingsClient({
   initialProfile,
   initialConnections,
   oauthConfigured,
+  appSlug,
   initialAiConfig,
   serverAiConfigured,
 }: {
   initialProfile: { email: string; fullName: string; plan: string };
   initialConnections: GitHubConnection[];
   oauthConfigured: boolean;
+  appSlug?: string | null;
   initialAiConfig: AiConfigView;
   serverAiConfigured: boolean;
 }) {
@@ -254,6 +256,18 @@ export function SettingsClient({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
+            {appSlug ? (
+              <Button asChild size="sm">
+                <a
+                  href={`https://github.com/apps/${appSlug}/installations/new`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Github className="h-4 w-4" />
+                  Install GitHub App
+                </a>
+              </Button>
+            ) : null}
             {oauthConfigured ? (
               <Button asChild variant="outline" size="sm">
                 <a href="/api/github/oauth/start">
@@ -261,12 +275,12 @@ export function SettingsClient({
                   Authorize via GitHub OAuth
                 </a>
               </Button>
-            ) : (
+            ) : !appSlug ? (
               <span className="rounded-xl border border-[#26201a] bg-[#0f0c0a] px-3 py-2 text-xs text-[#9a9084]">
-                GitHub OAuth App not configured (`GITHUB_CLIENT_ID`). Use Personal Access Token
-                below.
+                GitHub OAuth / App env vars not set (`GITHUB_CLIENT_ID` / `GITHUB_APP_SLUG`). Use
+                encrypted Personal Access Token below.
               </span>
-            )}
+            ) : null}
           </div>
 
           <form onSubmit={handleConnectPat} className="flex flex-col gap-3 sm:flex-row sm:items-end">

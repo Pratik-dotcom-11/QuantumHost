@@ -265,6 +265,27 @@ export interface Database {
         };
         Relationships: [];
       };
+      github_webhook_deliveries: {
+        Row: {
+          delivery_id: string;
+          event_type: string;
+          received_at: string;
+          repository_full_name: string | null;
+        };
+        Insert: {
+          delivery_id: string;
+          event_type: string;
+          received_at?: string;
+          repository_full_name?: string | null;
+        };
+        Update: {
+          delivery_id?: string;
+          event_type?: string;
+          received_at?: string;
+          repository_full_name?: string | null;
+        };
+        Relationships: [];
+      };
       github_connections: {
         Row: {
           created_at: string;
