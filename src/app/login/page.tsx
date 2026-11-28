@@ -23,9 +23,41 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [error, setError] = useState<string | null>(
     initialError ? "Authentication callback failed. Please try signing in again." : null
   );
+
+  async function handlePasswordReset() {
+    setError(null);
+    setResetSent(false);
+    if (!email.trim()) {
+      setError("Enter your email address first so we can send a password reset link.");
+      return;
+    }
+    setResetSending(true);
+    try {
+      const supabase = createClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      });
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+      setResetSent(true);
+      toast({
+        title: "Reset link sent",
+        description: `Check ${email.trim()} for your password reset email.`,
+        variant: "success",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send password reset email.");
+    } finally {
+      setResetSending(false);
+    }
+  }
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -106,6 +138,13 @@ function LoginForm() {
             </div>
           ) : null}
 
+          {resetSent ? (
+            <div className="rounded-xl border border-emerald-500/35 bg-emerald-500/12 p-3 text-xs text-emerald-200">
+              Password reset link sent to <strong>{email}</strong>. Open the link in your inbox to
+              choose a new password.
+            </div>
+          ) : null}
+
           <Button
             type="button"
             variant="outline"
@@ -143,7 +182,17 @@ function LoginForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={resetSending || loading}
+                  className="text-[11px] font-medium text-[#f4ba4a] hover:underline disabled:opacity-50 cursor-pointer"
+                >
+                  {resetSending ? "Sending..." : "Forgot password?"}
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"

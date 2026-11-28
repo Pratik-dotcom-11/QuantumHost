@@ -104,11 +104,21 @@ export async function POST(request: Request) {
       }
     );
 
-    await supabase
-      .from("deployments")
-      .update({ ai_diagnosis: diagnosis as unknown as Json })
-      .eq("id", deployment.id)
-      .eq("user_id", user.id);
+    await Promise.all([
+      supabase
+        .from("deployments")
+        .update({ ai_diagnosis: diagnosis as unknown as Json })
+        .eq("id", deployment.id)
+        .eq("user_id", user.id),
+      supabase.from("ai_analyses").insert({
+        deployment_id: deployment.id,
+        project_id: deployment.project_id,
+        user_id: user.id,
+        analysis_type: "build_failure",
+        summary: diagnosis.summary,
+        findings: diagnosis as unknown as Json,
+      }),
+    ]);
 
     if (diagnosis.tokensUsed > 0) {
       await supabase.from("resource_usage_events").insert({

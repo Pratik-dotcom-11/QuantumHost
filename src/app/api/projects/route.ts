@@ -10,6 +10,7 @@ import { slugify } from "@/lib/utils";
 const createProjectSchema = z.object({
   name: z.string().min(2).max(64),
   slug: z.string().min(3).max(63).optional(),
+  description: z.string().max(500).nullable().optional(),
   githubConnectionId: z.string().uuid().nullable().optional(),
   repoFullName: z.string().min(3).max(200).nullable().optional(),
   repoId: z.number().int().positive().nullable().optional(),
@@ -32,7 +33,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("projects")
     .select(
-      "id, name, slug, framework, repo_full_name, repo_url, default_branch, root_directory, install_command, build_command, output_directory, node_version, auto_deploy, active_deployment_id, created_at, updated_at"
+      "id, name, slug, description, framework, repo_full_name, repo_url, default_branch, root_directory, install_command, build_command, output_directory, node_version, auto_deploy, active_deployment_id, created_at, updated_at"
     )
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
@@ -89,6 +90,7 @@ export async function POST(request: Request) {
       github_connection_id: input.githubConnectionId ?? null,
       name: input.name.trim(),
       slug: normalizedSlug,
+      description: input.description?.trim() || null,
       framework: input.framework,
       repo_full_name: input.repoFullName ?? null,
       repo_id: input.repoId ?? null,

@@ -34,6 +34,39 @@ export interface Database {
   };
   public: {
     Tables: {
+      ai_analyses: {
+        Row: {
+          analysis_type: string;
+          created_at: string;
+          deployment_id: string;
+          findings: Json;
+          id: string;
+          project_id: string;
+          summary: string;
+          user_id: string;
+        };
+        Insert: {
+          analysis_type?: string;
+          created_at?: string;
+          deployment_id: string;
+          findings?: Json;
+          id?: string;
+          project_id: string;
+          summary: string;
+          user_id: string;
+        };
+        Update: {
+          analysis_type?: string;
+          created_at?: string;
+          deployment_id?: string;
+          findings?: Json;
+          id?: string;
+          project_id?: string;
+          summary?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       ai_configurations: {
         Row: {
           base_url: string | null;
@@ -283,6 +316,7 @@ export interface Database {
           id: string;
           plan: string;
           updated_at: string;
+          username: string | null;
         };
         Insert: {
           avatar_url?: string | null;
@@ -292,6 +326,7 @@ export interface Database {
           id: string;
           plan?: string;
           updated_at?: string;
+          username?: string | null;
         };
         Update: {
           avatar_url?: string | null;
@@ -301,6 +336,7 @@ export interface Database {
           id?: string;
           plan?: string;
           updated_at?: string;
+          username?: string | null;
         };
         Relationships: [];
       };
@@ -347,6 +383,7 @@ export interface Database {
           build_command: string;
           created_at: string;
           default_branch: string;
+          description: string | null;
           framework: string;
           github_connection_id: string | null;
           id: string;
@@ -370,6 +407,7 @@ export interface Database {
           build_command?: string;
           created_at?: string;
           default_branch?: string;
+          description?: string | null;
           framework?: string;
           github_connection_id?: string | null;
           id?: string;
@@ -393,6 +431,7 @@ export interface Database {
           build_command?: string;
           created_at?: string;
           default_branch?: string;
+          description?: string | null;
           framework?: string;
           github_connection_id?: string | null;
           id?: string;

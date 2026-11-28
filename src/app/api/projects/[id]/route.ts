@@ -5,6 +5,7 @@ import type { Database } from "@/types/database";
 
 const updateProjectSchema = z.object({
   name: z.string().min(2).max(64).optional(),
+  description: z.string().max(500).nullable().optional(),
   framework: z.enum(["nextjs", "vite", "react", "astro", "static", "node", "custom"]).optional(),
   defaultBranch: z.string().min(1).max(100).optional(),
   rootDirectory: z.string().min(1).max(200).optional(),
@@ -64,6 +65,7 @@ export async function PATCH(
 
   const updates: Database["public"]["Tables"]["projects"]["Update"] = {};
   if (parsed.data.name !== undefined) updates.name = parsed.data.name.trim();
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description?.trim() || null;
   if (parsed.data.framework !== undefined) updates.framework = parsed.data.framework;
   if (parsed.data.defaultBranch !== undefined) updates.default_branch = parsed.data.defaultBranch.trim();
   if (parsed.data.rootDirectory !== undefined) updates.root_directory = parsed.data.rootDirectory.trim();
