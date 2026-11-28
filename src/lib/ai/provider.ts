@@ -218,6 +218,163 @@ async function callAnthropic(
   };
 }
 
+export interface AiCopilotInput {
+  question: string;
+  project?: {
+    name: string;
+    slug: string;
+    framework: string;
+    installCommand: string;
+    buildCommand: string;
+    outputDirectory: string;
+    nodeVersion: string;
+  } | null;
+  deployment?: {
+    id: string;
+    deploymentNumber: number;
+    status: string;
+    environment: string;
+    branch: string | null;
+    errorSummary: string | null;
+    buildDurationMs: number | null;
+    artifactSizeBytes: number;
+    logLines: Array<{ stage: string; level: string; message: string }>;
+  } | null;
+  usageSummary?: {
+    buildMinutes: number;
+    storageBytes: number;
+    bandwidthBytes: number;
+    httpRequests: number;
+    deploymentCount: number;
+    readyDeployments: number;
+    failedDeployments: number;
+    aiTokens: number;
+  } | null;
+}
+
+export interface AiCopilotOutput {
+  answer: string;
+  keyFindings: string[];
+  recommendedActions: string[];
+  provider: AiProviderType;
+  model: string;
+  tokensUsed: number;
+  answeredAt: string;
+  authorizationNotice: string;
+}
+
+function buildCopilotPrompt(input: AiCopilotInput): string {
+  const parts: string[] = [
+    "You are QuantumHost Deployment Copilot, a senior cloud reliability engineer.",
+    "Strictly base your analysis on the supplied real backend telemetry, project config, logs, and usage metrics.",
+    "NEVER claim you executed shell commands or modified repository code; present suggested actions strictly for explicit user authorization.",
+    "Return strictly valid JSON matching:",
+    '{"answer": string, "keyFindings": string[], "recommendedActions": string[]}',
+    "",
+    `User Question: ${input.question}`,
+  ];
+
+  if (input.project) {
+    parts.push(
+      "",
+      "Project Configuration:",
+      `- Name: ${input.project.name} (slug: ${input.project.slug})`,
+      `- Framework: ${input.project.framework} (Node ${input.project.nodeVersion})`,
+      `- Install Command: ${input.project.installCommand || "(none)"}`,
+      `- Build Command: ${input.project.buildCommand || "(none)"}`,
+      `- Output Directory: ${input.project.outputDirectory}`
+    );
+  }
+
+  if (input.deployment) {
+    const formattedLogs = input.deployment.logLines
+      .slice(-120)
+      .map((l) => `[${l.stage}/${l.level}] ${l.message}`)
+      .join("\n");
+
+    parts.push(
+      "",
+      `Deployment #${input.deployment.deploymentNumber} (${input.deployment.status}, ${input.deployment.environment})`,
+      `- Branch: ${input.deployment.branch || "main"}`,
+      `- Build Duration ms: ${input.deployment.buildDurationMs ?? "null"}`,
+      `- Artifact Size bytes: ${input.deployment.artifactSizeBytes}`,
+      `- Error Summary: ${input.deployment.errorSummary || "(none)"}`,
+      "",
+      "Captured Build & Hosting Logs:",
+      formattedLogs || "(no logs captured yet)"
+    );
+  }
+
+  if (input.usageSummary) {
+    parts.push(
+      "",
+      "Workspace Infrastructure Usage (Real Recorded Telemetry):",
+      `- Total Deployments: ${input.usageSummary.deploymentCount} (${input.usageSummary.readyDeployments} ready, ${input.usageSummary.failedDeployments} failed)`,
+      `- Build Minutes: ${input.usageSummary.buildMinutes}`,
+      `- Artifact Storage Bytes: ${input.usageSummary.storageBytes}`,
+      `- Origin Served Bandwidth Bytes: ${input.usageSummary.bandwidthBytes}`,
+      `- Served HTTP Requests: ${input.usageSummary.httpRequests}`,
+      `- AI Tokens Consumed: ${input.usageSummary.aiTokens}`
+    );
+  }
+
+  return parts.join("\n");
+}
+
+function parseCopilotJson(rawText: string): {
+  answer: string;
+  keyFindings: string[];
+  recommendedActions: string[];
+} {
+  const cleaned = rawText
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  const parsed = JSON.parse(cleaned) as Partial<{
+    answer: string;
+    keyFindings: string[];
+    recommendedActions: string[];
+  }>;
+
+  return {
+    answer: parsed.answer || "Analysis complete.",
+    keyFindings: Array.isArray(parsed.keyFindings) ? parsed.keyFindings.map(String) : [],
+    recommendedActions: Array.isArray(parsed.recommendedActions)
+      ? parsed.recommendedActions.map(String)
+      : [],
+  };
+}
+
+export async function askDeploymentCopilot(
+  config: AiProviderConfig,
+  input: AiCopilotInput
+): Promise<AiCopilotOutput> {
+  const prompt = buildCopilotPrompt(input);
+
+  let rawResult: { text: string; tokensUsed: number };
+  if (config.provider === "gemini") {
+    rawResult = await callGemini(config, prompt);
+  } else if (config.provider === "anthropic") {
+    rawResult = await callAnthropic(config, prompt);
+  } else {
+    rawResult = await callOpenAiCompatible(config, prompt);
+  }
+
+  const parsed = parseCopilotJson(rawResult.text);
+  return {
+    ...parsed,
+    provider: config.provider,
+    model: config.model,
+    tokensUsed: rawResult.tokensUsed,
+    answeredAt: new Date().toISOString(),
+    authorizationNotice:
+      "Advisory only: QuantumHost Copilot never modifies files or executes commands automatically without explicit authorization.",
+  };
+}
+
 export async function runBuildDiagnosis(
   config: AiProviderConfig,
   input: AiDiagnosticInput

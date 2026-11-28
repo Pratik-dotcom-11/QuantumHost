@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import {
+  fetchRepositoryIntelligenceInputs,
   getLatestCommit,
   getRepositoryMetadata,
   inspectRepositoryFramework,
@@ -9,6 +10,7 @@ import {
   listBranches,
   resolveConnectionToken,
 } from "@/lib/github/client";
+import { analyzeDeployReadiness } from "@/lib/intelligence/deploy-analyzer";
 
 const inspectSchema = z.object({
   connectionId: z.string().uuid().nullable().optional(),
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
     }
 
     const targetBranch = parsed.data.branch?.trim() || metadata.default_branch || "main";
-    const [inspection, branches, latestCommit] = await Promise.all([
+    const [inspection, branches, latestCommit, repoInputs] = await Promise.all([
       inspectRepositoryFramework(
         token,
         metadata.full_name,
@@ -84,10 +86,31 @@ export async function POST(request: Request) {
       ),
       listBranches(token, metadata.full_name),
       getLatestCommit(token, metadata.full_name, targetBranch),
+      fetchRepositoryIntelligenceInputs(
+        token,
+        metadata.full_name,
+        targetBranch,
+        parsed.data.rootDirectory
+      ),
     ]);
+
+    const intelligence = analyzeDeployReadiness({
+      framework: inspection.preset.id,
+      installCommand: inspection.preset.installCommand,
+      buildCommand: inspection.preset.buildCommand,
+      outputDirectory: inspection.preset.outputDirectory,
+      nodeVersion: "20",
+      rootFiles: repoInputs.rootFiles,
+      packageJsonRaw: repoInputs.packageJsonRaw,
+      nextConfigRaw: repoInputs.nextConfigRaw,
+      viteConfigRaw: repoInputs.viteConfigRaw,
+      envExampleRaw: repoInputs.envExampleRaw,
+      configuredEnvKeys: [],
+    });
 
     return NextResponse.json({
       ...inspection,
+      intelligence,
       branches,
       metadata: {
         id: metadata.id,

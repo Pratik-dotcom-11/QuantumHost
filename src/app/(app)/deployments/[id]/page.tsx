@@ -23,7 +23,7 @@ export default async function DeploymentDetailPage({
     notFound();
   }
 
-  const [{ data: project }, { data: logs }] = await Promise.all([
+  const [{ data: project }, { data: logs }, { data: aiConfig }] = await Promise.all([
     supabase
       .from("projects")
       .select("name, slug, active_deployment_id")
@@ -37,7 +37,16 @@ export default async function DeploymentDetailPage({
       .eq("user_id", user.id)
       .order("seq", { ascending: true })
       .limit(500),
+    supabase
+      .from("ai_configurations")
+      .select("provider, model, encrypted_api_key, is_enabled")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
+
+  const aiConfigured =
+    Boolean(aiConfig?.encrypted_api_key) || Boolean(process.env.AI_API_KEY?.trim());
+  const aiEnabled = aiConfig ? aiConfig.is_enabled : true;
 
   return (
     <DeploymentDetailClient
@@ -46,6 +55,12 @@ export default async function DeploymentDetailPage({
       projectName={project?.name ?? "Project"}
       projectSlug={project?.slug ?? ""}
       isCurrentProduction={project?.active_deployment_id === deployment.id}
+      aiStatus={{
+        configured: aiConfigured,
+        enabled: aiEnabled,
+        provider: aiConfig?.provider || process.env.AI_PROVIDER || "gemini",
+        model: aiConfig?.model || process.env.AI_MODEL || "gemini-2.5-flash",
+      }}
     />
   );
 }

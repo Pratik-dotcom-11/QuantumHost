@@ -32,7 +32,7 @@ export default async function ProjectDetailPage({
     supabase
       .from("deployments")
       .select(
-        "id, deployment_number, status, environment, trigger_source, git_branch, git_commit_sha, git_commit_message, artifact_size_bytes, build_duration_ms, hosting_provider, preview_url, production_url, verified_at, created_at"
+        "id, deployment_number, status, environment, trigger_source, git_branch, git_commit_sha, git_commit_message, artifact_size_bytes, build_duration_ms, hosting_provider, preview_url, production_url, started_at, finished_at, error_summary, verified_at, created_at"
       )
       .eq("project_id", project.id)
       .eq("user_id", user.id)

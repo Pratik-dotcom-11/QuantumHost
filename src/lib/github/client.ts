@@ -258,7 +258,7 @@ export async function listBranches(
   return data.map((b) => b.name);
 }
 
-async function fetchRepoFileText(
+export async function fetchRepoFileText(
   token: string | null,
   repoFullName: string,
   filePath: string,
@@ -276,6 +276,85 @@ async function fetchRepoFileText(
   const payload = (await res.json()) as { content?: string };
   if (!payload.content) return null;
   return Buffer.from(payload.content, "base64").toString("utf8");
+}
+
+export async function listRepoDirectoryFiles(
+  token: string | null,
+  repoFullName: string,
+  branch: string,
+  rootDirectory = "."
+): Promise<string[]> {
+  if (!isValidRepoFullName(repoFullName)) return [];
+  const normalizedRoot = rootDirectory.replace(/^\.?\/+|\/+$/g, "");
+  const endpoint = normalizedRoot
+    ? `${GITHUB_API_BASE}/repos/${repoFullName.trim()}/contents/${normalizedRoot}?ref=${encodeURIComponent(branch)}`
+    : `${GITHUB_API_BASE}/repos/${repoFullName.trim()}/contents?ref=${encodeURIComponent(branch)}`;
+
+  const res = await fetch(endpoint, {
+    headers: githubHeaders(token),
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+
+  const payload = (await res.json()) as Array<{ name?: string; type?: string }> | { name?: string };
+  if (!Array.isArray(payload)) return [];
+  return payload.map((item) => item.name).filter((n): n is string => Boolean(n));
+}
+
+export async function fetchRepositoryIntelligenceInputs(
+  token: string | null,
+  repoFullName: string,
+  branch: string,
+  rootDirectory = "."
+): Promise<{
+  rootFiles: string[];
+  packageJsonRaw: string | null;
+  nextConfigRaw: string | null;
+  viteConfigRaw: string | null;
+  envExampleRaw: string | null;
+}> {
+  const normalizedRoot = rootDirectory.replace(/^\.?\/+|\/+$/g, "");
+  const prefix = normalizedRoot ? `${normalizedRoot}/` : "";
+
+  const rootFiles = await listRepoDirectoryFiles(token, repoFullName, branch, rootDirectory);
+  const lower = new Set(rootFiles.map((f) => f.toLowerCase()));
+
+  const nextConfFile = lower.has("next.config.ts")
+    ? "next.config.ts"
+    : lower.has("next.config.mjs")
+    ? "next.config.mjs"
+    : lower.has("next.config.js")
+    ? "next.config.js"
+    : null;
+
+  const viteConfFile = lower.has("vite.config.ts")
+    ? "vite.config.ts"
+    : lower.has("vite.config.mjs")
+    ? "vite.config.mjs"
+    : lower.has("vite.config.js")
+    ? "vite.config.js"
+    : null;
+
+  const envFile = lower.has(".env.example")
+    ? ".env.example"
+    : lower.has("env.example")
+    ? "env.example"
+    : null;
+
+  const [packageJsonRaw, nextConfigRaw, viteConfigRaw, envExampleRaw] = await Promise.all([
+    fetchRepoFileText(token, repoFullName, `${prefix}package.json`, branch),
+    nextConfFile ? fetchRepoFileText(token, repoFullName, `${prefix}${nextConfFile}`, branch) : Promise.resolve(null),
+    viteConfFile ? fetchRepoFileText(token, repoFullName, `${prefix}${viteConfFile}`, branch) : Promise.resolve(null),
+    envFile ? fetchRepoFileText(token, repoFullName, `${prefix}${envFile}`, branch) : Promise.resolve(null),
+  ]);
+
+  return {
+    rootFiles,
+    packageJsonRaw,
+    nextConfigRaw,
+    viteConfigRaw,
+    envExampleRaw,
+  };
 }
 
 export async function inspectRepositoryFramework(

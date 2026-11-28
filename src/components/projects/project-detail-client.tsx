@@ -11,16 +11,17 @@ import {
   KeyRound,
   Loader2,
   Rocket,
-  RotateCcw,
   Save,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
 import { FRAMEWORK_PRESETS } from "@/lib/frameworks";
 import type { ProjectHostingUrls } from "@/lib/hosting/urls";
-import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
+import type { DeployIntelligenceReport } from "@/lib/intelligence/deploy-analyzer";
+import { formatRelativeTime } from "@/lib/utils";
 import type { FrameworkType } from "@/types/database";
-import { DeploymentStatusBadge } from "@/components/status-badge";
+import { DeploymentTimeline } from "@/components/deployments/deployment-timeline";
+import { DeployIntelligencePanel } from "@/components/intelligence/deploy-intelligence-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,9 @@ interface DeploymentRow {
   hosting_provider?: string;
   preview_url: string | null;
   production_url?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  error_summary?: string | null;
   verified_at?: string | null;
   created_at: string;
 }
@@ -105,6 +109,10 @@ export function ProjectDetailClient({
   const [rollingBackId, setRollingBackId] = useState<string | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [intelligenceReport, setIntelligenceReport] = useState<DeployIntelligenceReport | null>(
+    null
+  );
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   // Settings form state
@@ -192,6 +200,69 @@ export function ProjectDetailClient({
       });
     } finally {
       setRollingBackId(null);
+    }
+  }
+
+  async function handleAnalyzeReadiness() {
+    setFeedback(null);
+    setAnalyzing(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/analyze`, { method: "POST" });
+      const json = (await res.json()) as { report?: DeployIntelligenceReport; error?: string };
+      if (!res.ok || !json.report) throw new Error(json.error || "Analysis failed");
+      setIntelligenceReport(json.report);
+    } catch (err) {
+      setFeedback({
+        type: "err",
+        text: err instanceof Error ? err.message : "Pre-deployment analysis failed",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  async function handleApplyRecommendedConfig(
+    rec: DeployIntelligenceReport["recommendedConfig"]
+  ) {
+    setFramework(rec.framework);
+    setInstallCommand(rec.installCommand);
+    setBuildCommand(rec.buildCommand);
+    setOutputDirectory(rec.outputDirectory);
+    setNodeVersion(rec.nodeVersion);
+    setSavingSettings(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          framework: rec.framework,
+          defaultBranch,
+          rootDirectory,
+          installCommand: rec.installCommand,
+          buildCommand: rec.buildCommand,
+          outputDirectory: rec.outputDirectory,
+          nodeVersion: rec.nodeVersion,
+          autoDeploy,
+        }),
+      });
+      const json = (await res.json()) as { project?: ProjectRow; error?: string };
+      if (!res.ok || !json.project) throw new Error(json.error || "Failed to apply settings");
+      setProject(json.project);
+      toast({
+        title: "Recommended configuration applied",
+        description: `${rec.framework} (${rec.outputDirectory}) saved.`,
+        variant: "success",
+      });
+      setFeedback({ type: "ok", text: "Recommended build configuration applied." });
+      router.refresh();
+    } catch (err) {
+      setFeedback({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to apply settings",
+      });
+    } finally {
+      setSavingSettings(false);
     }
   }
 
@@ -442,7 +513,8 @@ export function ProjectDetailClient({
 
       <Tabs defaultValue="deployments">
         <TabsList>
-          <TabsTrigger value="deployments">Deployments ({deployments.length})</TabsTrigger>
+          <TabsTrigger value="deployments">Timeline ({deployments.length})</TabsTrigger>
+          <TabsTrigger value="intelligence">Deploy Intelligence</TabsTrigger>
           <TabsTrigger value="env">Environment Variables ({envVars.length})</TabsTrigger>
           <TabsTrigger value="settings">Build & Settings</TabsTrigger>
         </TabsList>
@@ -450,79 +522,47 @@ export function ProjectDetailClient({
         <TabsContent value="deployments">
           <Card>
             <CardHeader>
-              <CardTitle>Deployment History</CardTitle>
+              <CardTitle>Deployment Timeline</CardTitle>
               <CardDescription>
-                Inspect build logs, preview immutable builds, or roll back to any successful deployment.
+                Chronological build history with commit SHAs, timestamps, durations, logs, and verified rollbacks.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {deployments.length === 0 ? (
-                <p className="py-6 text-sm text-muted-foreground">
-                  No deployments yet. Click <strong>Deploy Now</strong> to enqueue the first build.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {deployments.map((dep) => {
-                    const isActive = project.active_deployment_id === dep.id;
-                    return (
-                      <div
-                        key={dep.id}
-                        className="flex flex-col gap-3 rounded-xl border border-[#26201a] bg-[#0f0c0a] p-4 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Link
-                              href={`/deployments/${dep.id}`}
-                              className="font-mono text-sm font-semibold text-[#f7f3ec] hover:text-[#f4ba4a]"
-                            >
-                              #{dep.deployment_number}
-                            </Link>
-                            <DeploymentStatusBadge status={dep.status} />
-                            {isActive ? (
-                              <span className="rounded-full border border-[#d49b4b]/40 bg-[#2a1d0e]/75 px-2.5 py-0.5 text-[11px] font-medium text-[#f4ba4a]">
-                                Current Production
-                              </span>
-                            ) : null}
-                            <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                              {dep.environment}
-                            </span>
-                          </div>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {dep.git_commit_message || `Triggered via ${dep.trigger_source}`} ·{" "}
-                            {dep.git_branch || project.default_branch} ·{" "}
-                            {formatDuration(dep.build_duration_ms)} ·{" "}
-                            {formatBytes(dep.artifact_size_bytes)} ·{" "}
-                            {formatRelativeTime(dep.created_at)}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button asChild variant="secondary" size="sm">
-                            <Link href={`/deployments/${dep.id}`}>Build Logs</Link>
-                          </Button>
-                          {dep.status === "ready" && !isActive ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRollback(dep.id)}
-                              disabled={rollingBackId === dep.id}
-                            >
-                              {rollingBackId === dep.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <RotateCcw className="h-3.5 w-3.5" />
-                              )}
-                              Rollback
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <DeploymentTimeline
+                deployments={deployments}
+                defaultBranch={project.default_branch}
+                activeDeploymentId={project.active_deployment_id}
+                rollingBackId={rollingBackId}
+                onRollback={handleRollback}
+              />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="intelligence">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Pre-Deployment Intelligence</CardTitle>
+                  <CardDescription>
+                    Inspect framework detection, config files, command validity, dependency warnings, and environment variable coverage before building.
+                  </CardDescription>
+                </div>
+                <Button onClick={handleAnalyzeReadiness} disabled={analyzing} size="sm">
+                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {intelligenceReport ? "Re-run Analysis" : "Analyze Readiness"}
+                </Button>
+              </CardHeader>
+            </Card>
+            {intelligenceReport ? (
+              <DeployIntelligencePanel
+                report={intelligenceReport}
+                onApplyRecommended={handleApplyRecommendedConfig}
+                applying={savingSettings}
+              />
+            ) : null}
+          </div>
         </TabsContent>
 
         <TabsContent value="env">

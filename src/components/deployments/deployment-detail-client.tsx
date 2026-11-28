@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isActiveDeploymentStatus } from "@/lib/deployments/lifecycle";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
+import { CopilotPanel } from "@/components/ai/copilot-panel";
 import { DeploymentPipeline } from "@/components/motion/deployment-pipeline";
 import { QH_EASE } from "@/components/motion/tokens";
 import { DeploymentStatusBadge } from "@/components/status-badge";
@@ -65,12 +66,14 @@ export function DeploymentDetailClient({
   projectName,
   projectSlug,
   isCurrentProduction,
+  aiStatus = { configured: false, enabled: true, provider: "gemini", model: "gemini-2.5-flash" },
 }: {
   initialDeployment: DeploymentDetail;
   initialLogs: LogEntry[];
   projectName: string;
   projectSlug: string;
   isCurrentProduction: boolean;
+  aiStatus?: { configured: boolean; enabled: boolean; provider: string; model: string };
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -449,6 +452,15 @@ export function DeploymentDetailClient({
           </div>
         </CardContent>
       </Card>
+
+      <CopilotPanel
+        configured={aiStatus.configured}
+        enabled={aiStatus.enabled}
+        provider={aiStatus.provider}
+        model={aiStatus.model}
+        fixedProjectId={deployment.project_id}
+        fixedDeploymentId={deployment.id}
+      />
     </div>
   );
 }

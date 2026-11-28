@@ -13,8 +13,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { FRAMEWORK_PRESETS } from "@/lib/frameworks";
+import type { DeployIntelligenceReport } from "@/lib/intelligence/deploy-analyzer";
 import { slugify } from "@/lib/utils";
 import type { FrameworkType } from "@/types/database";
+import { DeployIntelligencePanel } from "@/components/intelligence/deploy-intelligence-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,6 +55,7 @@ export function NewProjectWizard({
   const [branches, setBranches] = useState<string[]>(["main"]);
   const [detecting, setDetecting] = useState(false);
   const [compatibilityNote, setCompatibilityNote] = useState<string | null>(null);
+  const [intelligence, setIntelligence] = useState<DeployIntelligenceReport | null>(null);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -130,6 +133,7 @@ export function NewProjectWizard({
           description: string | null;
         };
         compatibilityNote?: string | null;
+        intelligence?: DeployIntelligenceReport;
         error?: string;
       };
 
@@ -153,6 +157,7 @@ export function NewProjectWizard({
         setOutputDirectory(json.preset.outputDirectory);
       }
       setCompatibilityNote(json.compatibilityNote ?? null);
+      setIntelligence(json.intelligence ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Repository inspection failed");
     } finally {
@@ -550,6 +555,19 @@ export function NewProjectWizard({
                 </div>
               ) : null}
             </div>
+
+            {intelligence ? (
+              <DeployIntelligencePanel
+                report={intelligence}
+                onApplyRecommended={(rec) => {
+                  setFramework(rec.framework);
+                  setInstallCommand(rec.installCommand);
+                  setBuildCommand(rec.buildCommand);
+                  setOutputDirectory(rec.outputDirectory);
+                  setNodeVersion(rec.nodeVersion);
+                }}
+              />
+            ) : null}
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button asChild variant="outline">

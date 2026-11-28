@@ -1,5 +1,7 @@
-import { Clock, Cpu, Database, Globe, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Clock, Cpu, Database, Globe, Info, Rocket, Sparkles } from "lucide-react";
 import { requirePageUser } from "@/lib/auth";
+import { buildUsageSummary } from "@/lib/usage/summary";
 import { formatBytes } from "@/lib/utils";
 import {
   AnimatedCounter,
@@ -7,6 +9,7 @@ import {
   StaggerGroup,
   StaggerItem,
 } from "@/components/motion/primitives";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -22,70 +25,40 @@ export default async function UsagePage() {
       .order("recorded_at", { ascending: false })
       .limit(2000),
     supabase.from("projects").select("id, name, slug").eq("user_id", user.id),
-    supabase.from("deployments").select("id, project_id, status").eq("user_id", user.id),
+    supabase
+      .from("deployments")
+      .select("id, project_id, status, artifact_size_bytes, build_duration_ms")
+      .eq("user_id", user.id),
   ]);
 
-  let buildSeconds = 0;
-  let storageBytes = 0;
-  let bandwidthBytes = 0;
-  let httpRequests = 0;
-  let aiTokens = 0;
+  const summary = buildUsageSummary({
+    projects: projects ?? [],
+    deployments: deployments ?? [],
+    events: events ?? [],
+    hostingProvider: process.env.HOSTING_PROVIDER?.trim() || "quantumhost-edge",
+    storageProvider: process.env.ARTIFACT_STORAGE_PROVIDER?.trim() || "local",
+  });
 
-  const projectRows = new Map(
-    (projects ?? []).map((p) => [
-      p.id,
-      {
-        name: p.name,
-        slug: p.slug,
-        deployments: 0,
-        buildSeconds: 0,
-        storageBytes: 0,
-        bandwidthBytes: 0,
-        httpRequests: 0,
-      },
-    ])
-  );
-
-  for (const d of deployments ?? []) {
-    const row = projectRows.get(d.project_id);
-    if (row) row.deployments += 1;
-  }
-
-  for (const ev of events ?? []) {
-    const val = Number(ev.value) || 0;
-    const row = ev.project_id ? projectRows.get(ev.project_id) : undefined;
-    switch (ev.metric_type) {
-      case "build_seconds":
-        buildSeconds += val;
-        if (row) row.buildSeconds += val;
-        break;
-      case "storage_bytes":
-        storageBytes += val;
-        if (row) row.storageBytes += val;
-        break;
-      case "bandwidth_bytes":
-        bandwidthBytes += val;
-        if (row) row.bandwidthBytes += val;
-        break;
-      case "http_request":
-        httpRequests += val;
-        if (row) row.httpRequests += val;
-        break;
-      case "ai_tokens":
-        aiTokens += val;
-        break;
-    }
-  }
+  const { totals, deploymentCounts, projects: projectRows, measurementNotes } = summary;
+  const maxProjectStorage = Math.max(...projectRows.map((r) => r.storageBytes), 1);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
-          Resource Consumption
-        </h1>
-        <p className="mt-1 text-sm text-[#9a9084]">
-          Real build compute, artifact storage, served bandwidth, HTTP traffic, and AI diagnostics usage.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-medium tracking-[-0.025em] text-[#f7f3ec]">
+            Resource Transparency
+          </h1>
+          <p className="mt-1 text-sm text-[#9a9084]">
+            Verified measurements from build workers, object storage uploads, and origin site delivery — zero fabricated numbers.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/copilot">
+            <Sparkles className="h-4 w-4 text-[#f4ba4a]" />
+            Explain Usage with Copilot
+          </Link>
+        </Button>
       </div>
 
       <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" viewport={false} stagger={0.055}>
@@ -93,13 +66,16 @@ export default async function UsagePage() {
           <SpotlightCard className="h-full">
             <Card className="h-full border-0 bg-transparent shadow-none">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardDescription>Build Compute</CardDescription>
+                <CardDescription>Build Minutes</CardDescription>
                 <Clock className="h-4 w-4 text-[#f4ba4a]" />
               </CardHeader>
               <CardContent>
                 <div className="font-mono text-xl font-bold text-[#f7f3ec]">
-                  <AnimatedCounter value={buildSeconds} decimals={1} suffix="s" />
+                  <AnimatedCounter value={totals.buildMinutes} decimals={2} suffix="m" />
                 </div>
+                <p className="mt-1 font-mono text-[11px] text-[#9a9084]">
+                  {totals.buildSeconds.toFixed(1)}s measured
+                </p>
               </CardContent>
             </Card>
           </SpotlightCard>
@@ -113,7 +89,12 @@ export default async function UsagePage() {
                 <Database className="h-4 w-4 text-emerald-400" />
               </CardHeader>
               <CardContent>
-                <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(storageBytes)}</div>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">
+                  {formatBytes(totals.currentStoredBytes || totals.storageBytes)}
+                </div>
+                <p className="mt-1 font-mono text-[11px] text-[#9a9084]">
+                  {formatBytes(totals.storageBytes)} cumulative uploaded
+                </p>
               </CardContent>
             </Card>
           </SpotlightCard>
@@ -123,11 +104,16 @@ export default async function UsagePage() {
           <SpotlightCard className="h-full">
             <Card className="h-full border-0 bg-transparent shadow-none">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardDescription>Bandwidth Served</CardDescription>
+                <CardDescription>Origin Bandwidth</CardDescription>
                 <Globe className="h-4 w-4 text-[#f4ba4a]" />
               </CardHeader>
               <CardContent>
-                <div className="font-mono text-xl font-bold text-[#f7f3ec]">{formatBytes(bandwidthBytes)}</div>
+                <div className="font-mono text-xl font-bold text-[#f7f3ec]">
+                  {formatBytes(totals.bandwidthBytes)}
+                </div>
+                <p className="mt-1 font-mono text-[11px] text-[#9a9084]">
+                  {totals.httpRequests.toLocaleString()} served requests
+                </p>
               </CardContent>
             </Card>
           </SpotlightCard>
@@ -137,13 +123,16 @@ export default async function UsagePage() {
           <SpotlightCard className="h-full">
             <Card className="h-full border-0 bg-transparent shadow-none">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardDescription>HTTP Requests</CardDescription>
-                <Cpu className="h-4 w-4 text-amber-400" />
+                <CardDescription>Deployments</CardDescription>
+                <Rocket className="h-4 w-4 text-amber-400" />
               </CardHeader>
               <CardContent>
                 <div className="font-mono text-xl font-bold text-[#f7f3ec]">
-                  <AnimatedCounter value={httpRequests} locale />
+                  <AnimatedCounter value={deploymentCounts.total} locale />
                 </div>
+                <p className="mt-1 font-mono text-[11px] text-[#9a9084]">
+                  {deploymentCounts.ready} ready · {deploymentCounts.failed} failed
+                </p>
               </CardContent>
             </Card>
           </SpotlightCard>
@@ -153,13 +142,16 @@ export default async function UsagePage() {
           <SpotlightCard className="h-full">
             <Card className="h-full border-0 bg-transparent shadow-none">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardDescription>AI Tokens</CardDescription>
-                <Sparkles className="h-4 w-4 text-[#f4ba4a]" />
+                <CardDescription>AI Copilot Tokens</CardDescription>
+                <Cpu className="h-4 w-4 text-[#f4ba4a]" />
               </CardHeader>
               <CardContent>
                 <div className="font-mono text-xl font-bold text-[#f7f3ec]">
-                  <AnimatedCounter value={aiTokens} locale />
+                  <AnimatedCounter value={totals.aiTokens} locale />
                 </div>
+                <p className="mt-1 font-mono text-[11px] text-[#9a9084]">
+                  From configured LLM API
+                </p>
               </CardContent>
             </Card>
           </SpotlightCard>
@@ -169,10 +161,10 @@ export default async function UsagePage() {
       <Card>
         <CardHeader>
           <CardTitle>Consumption by Project</CardTitle>
-          <CardDescription>Aggregated telemetry from worker builds and site serving</CardDescription>
+          <CardDescription>Per-project verified deployments, build minutes, storage, and origin traffic</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          {projectRows.size === 0 ? (
+          {projectRows.length === 0 ? (
             <p className="py-4 text-sm text-[#9a9084]">No projects created yet.</p>
           ) : (
             <table className="w-full text-left text-sm">
@@ -182,18 +174,32 @@ export default async function UsagePage() {
                   <th className="pb-3 pr-4">Deployments</th>
                   <th className="pb-3 pr-4">Build Time</th>
                   <th className="pb-3 pr-4">Artifacts Stored</th>
-                  <th className="pb-3 pr-4">Bandwidth</th>
+                  <th className="pb-3 pr-4">Origin Bandwidth</th>
                   <th className="pb-3">Requests</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#221c16] font-mono text-xs">
-                {Array.from(projectRows.values()).map((row) => (
+                {projectRows.map((row) => (
                   <tr key={row.slug} className="hover:bg-[#191410]">
                     <td className="py-3 pr-4 font-sans text-sm font-medium text-[#f7f3ec]">
-                      {row.name}
+                      <Link href={`/projects/${row.projectId}`} className="hover:text-[#f4ba4a]">
+                        {row.name}
+                      </Link>
+                      <div className="mt-1.5 h-1.5 w-32 overflow-hidden rounded-full bg-[#1e1812]">
+                        <div
+                          className="h-full bg-[#f4ba4a]"
+                          style={{
+                            width: `${Math.min(100, Math.round((row.storageBytes / maxProjectStorage) * 100))}%`,
+                          }}
+                        />
+                      </div>
                     </td>
-                    <td className="py-3 pr-4 text-[#d7cfc3]">{row.deployments}</td>
-                    <td className="py-3 pr-4 text-[#d7cfc3]">{row.buildSeconds.toFixed(1)}s</td>
+                    <td className="py-3 pr-4 text-[#d7cfc3]">
+                      {row.deployments} ({row.readyDeployments} ready)
+                    </td>
+                    <td className="py-3 pr-4 text-[#d7cfc3]">
+                      {row.buildMinutes.toFixed(2)}m ({row.buildSeconds.toFixed(1)}s)
+                    </td>
                     <td className="py-3 pr-4 text-[#d7cfc3]">{formatBytes(row.storageBytes)}</td>
                     <td className="py-3 pr-4 text-[#d7cfc3]">{formatBytes(row.bandwidthBytes)}</td>
                     <td className="py-3 text-[#d7cfc3]">{row.httpRequests.toLocaleString()}</td>
@@ -202,6 +208,36 @@ export default async function UsagePage() {
               </tbody>
             </table>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Info className="h-4 w-4 text-[#f4ba4a]" />
+            Measurement Transparency &amp; Sources
+          </CardTitle>
+          <CardDescription>
+            Every figure above maps directly to recorded runtime events — unavailable provider counters remain 0 rather than estimated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 text-xs sm:grid-cols-2">
+          <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+            <p className="font-semibold text-[#f7f3ec]">Build Minutes</p>
+            <p className="mt-1 text-[#9a9084]">{measurementNotes.buildCompute}</p>
+          </div>
+          <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+            <p className="font-semibold text-[#f7f3ec]">Artifact Storage</p>
+            <p className="mt-1 text-[#9a9084]">{measurementNotes.storage}</p>
+          </div>
+          <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+            <p className="font-semibold text-[#f7f3ec]">Bandwidth</p>
+            <p className="mt-1 text-[#9a9084]">{measurementNotes.bandwidth}</p>
+          </div>
+          <div className="rounded-xl border border-[#26201a] bg-[#0f0c0a] p-3">
+            <p className="font-semibold text-[#f7f3ec]">HTTP Requests</p>
+            <p className="mt-1 text-[#9a9084]">{measurementNotes.requests}</p>
+          </div>
         </CardContent>
       </Card>
     </div>

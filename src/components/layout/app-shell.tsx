@@ -15,6 +15,7 @@ import {
   Menu,
   Rocket,
   Settings,
+  Sparkles,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/domains", label: "Domains", icon: Globe },
   { href: "/monitoring", label: "Monitoring", icon: Activity },
   { href: "/usage", label: "Usage Analytics", icon: BarChart3 },
+  { href: "/copilot", label: "Deployment Copilot", icon: Sparkles },
   { href: "/settings", label: "Account Settings", icon: Settings },
 ];
 
