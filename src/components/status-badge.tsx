@@ -1,25 +1,36 @@
 import { CheckCircle2, Clock, Loader2, ShieldAlert, XCircle, Ban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+const ACTIVE_LABELS: Record<string, string> = {
+  initializing: "Initializing",
+  cloning: "Cloning",
+  analyzing: "Analyzing",
+  building: "Building",
+  uploading: "Uploading",
+  deploying: "Deploying",
+  verifying: "Verifying",
+};
+
 export function DeploymentStatusBadge({ status }: { status: string }) {
+  if (status in ACTIVE_LABELS) {
+    return (
+      <Badge variant="default" className="relative overflow-hidden">
+        <span
+          aria-hidden="true"
+          className="mr-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[#f4ba4a] animate-ping"
+        />
+        <Loader2 className="h-3 w-3 animate-spin" />
+        {ACTIVE_LABELS[status]}
+      </Badge>
+    );
+  }
+
   switch (status) {
     case "ready":
       return (
         <Badge variant="success">
           <CheckCircle2 className="h-3 w-3" />
           Ready
-        </Badge>
-      );
-    case "building":
-    case "uploading":
-      return (
-        <Badge variant="default" className="relative overflow-hidden">
-          <span
-            aria-hidden="true"
-            className="mr-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[#f4ba4a] animate-ping"
-          />
-          <Loader2 className="h-3 w-3 animate-spin" />
-          {status === "uploading" ? "Uploading" : "Building"}
         </Badge>
       );
     case "queued":

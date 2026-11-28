@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { requirePageUser } from "@/lib/auth";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
+import { isActiveDeploymentStatus } from "@/lib/deployments/lifecycle";
 import { QuickDeployButton } from "@/components/dashboard/quick-deploy-button";
 import {
   AnimatedCounter,
@@ -83,7 +84,7 @@ export default async function DashboardPage() {
   const successfulDeployments = deploymentList.filter((d) => d.status === "ready").length;
   const failedDeployments = deploymentList.filter((d) => d.status === "failed").length;
   const inProgressDeployments = deploymentList.filter((d) =>
-    ["queued", "building", "uploading"].includes(d.status)
+    isActiveDeploymentStatus(d.status)
   ).length;
   const totalDeployments = deploymentList.length;
 

@@ -53,7 +53,7 @@ async function walkDirectory(rootDir: string, currentDir = rootDir): Promise<str
   const files: string[] = [];
 
   for (const entry of entries) {
-    if (entry.name === ".git" || entry.name === "node_modules") continue;
+    if (entry.name === ".git" || entry.name === "node_modules" || entry.isSymbolicLink()) continue;
     const fullPath = path.join(currentDir, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await walkDirectory(rootDir, fullPath)));

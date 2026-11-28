@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
+import { isActiveDeploymentStatus } from "@/lib/deployments/lifecycle";
+import { cancelQueuedJob } from "@/lib/queue/bullmq";
 
 export async function GET(
   request: Request,
@@ -58,12 +60,14 @@ export async function DELETE(
     return NextResponse.json({ error: "Deployment not found" }, { status: 404 });
   }
 
-  if (!["queued", "building"].includes(existing.status)) {
+  if (!isActiveDeploymentStatus(existing.status)) {
     return NextResponse.json(
-      { error: "Only queued or building deployments can be cancelled." },
+      { error: "Only active in-progress deployments can be cancelled." },
       { status: 400 }
     );
   }
+
+  await cancelQueuedJob(id);
 
   const { error } = await supabase
     .from("deployments")

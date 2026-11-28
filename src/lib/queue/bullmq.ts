@@ -34,7 +34,11 @@ export function getBuildQueue(): Queue<BuildJobPayload> {
     cachedQueue = new Queue<BuildJobPayload>(BUILD_QUEUE_NAME, {
       connection: getRedisConnection(),
       defaultJobOptions: {
-        attempts: 1,
+        attempts: 2,
+        backoff: {
+          type: "exponential",
+          delay: 5000,
+        },
         removeOnComplete: 200,
         removeOnFail: 200,
       },
@@ -71,8 +75,25 @@ export async function enqueueBuildJob(payload: BuildJobPayload): Promise<string>
   }
 
   const queue = getBuildQueue();
+  const existing = await queue.getJob(payload.deploymentId);
+  if (existing) {
+    return existing.id ?? payload.deploymentId;
+  }
+
   const job = await queue.add("deploy", payload, {
     jobId: payload.deploymentId,
   });
   return job.id ?? payload.deploymentId;
+}
+
+export async function cancelQueuedJob(deploymentId: string): Promise<void> {
+  try {
+    const queue = getBuildQueue();
+    const job = await queue.getJob(deploymentId);
+    if (job) {
+      await job.remove();
+    }
+  } catch {
+    // Job may already be active or Redis unreachable; DB cancelled flag handles active abort
+  }
 }

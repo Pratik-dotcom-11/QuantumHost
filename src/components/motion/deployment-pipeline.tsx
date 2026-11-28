@@ -5,8 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, Cpu, GitBranch, Globe, HardDrive, Loader2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QH_EASE } from "@/components/motion/tokens";
-
-type RealStatus = "queued" | "building" | "uploading" | "ready" | "failed" | "cancelled";
+import type { DeploymentStatus } from "@/types/database";
 
 interface StageDef {
   id: string;
@@ -16,20 +15,26 @@ interface StageDef {
 }
 
 const STAGES: StageDef[] = [
-  { id: "source", label: "GitHub Repo", sub: "Commit & Webhook", icon: GitBranch },
-  { id: "build", label: "Build Worker", sub: "Isolated Sandbox", icon: Cpu },
-  { id: "artifact", label: "Artifact Store", sub: "Cloudflare R2", icon: HardDrive },
-  { id: "live", label: "Live Website", sub: "Edge Route Active", icon: Globe },
+  { id: "source", label: "GitHub Repo", sub: "Commit & Clone", icon: GitBranch },
+  { id: "build", label: "Build Worker", sub: "Analyze & Build", icon: Cpu },
+  { id: "artifact", label: "Artifact Store", sub: "Object Storage", icon: HardDrive },
+  { id: "live", label: "Live Website", sub: "Activate & Verify", icon: Globe },
 ];
 
-function resolveStageStates(status: RealStatus) {
+function resolveStageStates(status: DeploymentStatus | string) {
   switch (status) {
     case "queued":
+    case "initializing":
+    case "cloning":
       return { activeIdx: 0, state: "active" as const };
+    case "analyzing":
     case "building":
       return { activeIdx: 1, state: "active" as const };
     case "uploading":
       return { activeIdx: 2, state: "active" as const };
+    case "deploying":
+    case "verifying":
+      return { activeIdx: 3, state: "active" as const };
     case "ready":
       return { activeIdx: 3, state: "complete" as const };
     case "failed":
@@ -46,7 +51,7 @@ export function DeploymentPipeline({
   className,
 }: {
   mode?: "real" | "preview";
-  status?: RealStatus | string;
+  status?: DeploymentStatus | string;
   className?: string;
 }) {
   const reduced = useReducedMotion();
@@ -63,7 +68,7 @@ export function DeploymentPipeline({
   const resolved =
     mode === "preview"
       ? { activeIdx: simStep, state: simStep === 3 ? ("complete" as const) : ("active" as const) }
-      : resolveStageStates(status as RealStatus);
+      : resolveStageStates(status);
 
   return (
     <div
@@ -74,7 +79,7 @@ export function DeploymentPipeline({
     >
       <div className="mb-4 flex items-center justify-between gap-2">
         <span className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-[#9a9084]">
-          {mode === "preview" ? "Pipeline Lifecycle Preview" : "Deployment Pipeline"}
+          {mode === "preview" ? "Pipeline Lifecycle Preview" : `Deployment Pipeline · ${status}`}
         </span>
         {mode === "preview" ? (
           <span className="rounded-full border border-[#d49b4b]/30 bg-[#2a1d0e]/50 px-2.5 py-0.5 text-[10px] text-[#edd19a]">
@@ -97,7 +102,6 @@ export function DeploymentPipeline({
 
           return (
             <div key={stage.id} className="relative flex items-center gap-3 sm:flex-col sm:items-stretch sm:gap-2">
-              {/* Connecting line on desktop */}
               {idx < STAGES.length - 1 ? (
                 <div
                   aria-hidden="true"
@@ -121,7 +125,7 @@ export function DeploymentPipeline({
               ) : null}
 
               <motion.button
-                type={mode === "preview" ? "button" : "button"}
+                type="button"
                 onClick={() => {
                   if (mode === "preview") setSimStep(idx);
                 }}

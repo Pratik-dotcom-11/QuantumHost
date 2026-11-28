@@ -17,8 +17,13 @@ export type FrameworkType =
 
 export type DeploymentStatus =
   | "queued"
+  | "initializing"
+  | "cloning"
+  | "analyzing"
   | "building"
   | "uploading"
+  | "deploying"
+  | "verifying"
   | "ready"
   | "failed"
   | "cancelled";

@@ -14,6 +14,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { isActiveDeploymentStatus } from "@/lib/deployments/lifecycle";
 import { formatBytes, formatDuration, formatRelativeTime } from "@/lib/utils";
 import { DeploymentPipeline } from "@/components/motion/deployment-pipeline";
 import { QH_EASE } from "@/components/motion/tokens";
@@ -80,7 +81,7 @@ export function DeploymentDetailClient({
   const [cancelling, setCancelling] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const isInProgress = ["queued", "building", "uploading"].includes(deployment.status);
+  const isInProgress = isActiveDeploymentStatus(deployment.status);
 
   useEffect(() => {
     const supabase = createClient();
